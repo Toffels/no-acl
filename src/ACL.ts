@@ -1,9 +1,10 @@
+import * as z from "zod";
 import { InvalidInput } from "./errors/InvalidInput";
-import { ThrowNotImplemented } from "./errors/NotImplemented";
+import { NotImplemented, ThrowNotImplemented } from "./errors/NotImplemented";
 import { VariableUndefined } from "./errors/VariableUndefined";
 import { flatten } from "./utils";
 
-enum SimpleDescriptor {
+export enum SimpleDescriptor {
   //   i = "i",
   //   inherit = i,
 
@@ -21,13 +22,19 @@ type Role = RegExp | string;
 
 type VariableDescriptorKey = `@${string}`;
 
-type SpecialDescriptor = { d: SimpleDescriptor; roles: Role };
+type SpecialDescriptor = {
+  d: SimpleDescriptor;
+  roles: Role | [Role, ...Role[]];
+};
 
 type Descriptor =
   | SimpleDescriptor
   | VariableDescriptorKey
   | SpecialDescriptor
-  | (SpecialDescriptor | SimpleDescriptor)[];
+  | [
+      SpecialDescriptor | SimpleDescriptor,
+      ...(SpecialDescriptor | SimpleDescriptor)[]
+    ];
 
 type AclJson = {
   /** Variables */
@@ -41,39 +48,74 @@ type Acl = {
   [key: string]: Descriptor;
 };
 
-export class ACL<Data extends {}, User extends { roles: string[] }> {
+export class ACL<
+  Data extends {} = {},
+  User extends { roles: string[] } = { roles: string[] }
+> {
   #acl: Acl;
   #vars: Acl;
   #aclJson: Acl;
 
-  public toString(): string {
+  public toString(
+    /** Flushing means: To evaluate all variables and return a strict acl-object. */
+    flush = false
+  ): string {
     const result: string[] = [];
 
-    Object.entries({ ...this.#vars, ...this.#acl }).forEach(([key, value]) =>
+    Object.entries(this.toJson(flush)).forEach(([key, value]) =>
       result.push(`${key}: ${value}`)
     );
 
     return result.join("\n");
   }
 
-  public toJson() {
-    return { ...this.#vars, ...this.#acl };
+  public toJson(
+    /** Flushing means: To evaluate all variables and return a strict acl-object. */
+    flush = false
+  ) {
+    if (flush) {
+      const result = { ...this.#acl };
+
+      Object.entries(this.#acl).forEach(([key, value]) => {
+        if (typeof value === "string" && value.startsWith("@")) {
+          const variable = this.#vars[value];
+          if (!variable) delete result[key];
+          else if (typeof variable === "string" && variable.startsWith("@"))
+            throw new NotImplemented(
+              `Variable cross referencing a variable is not supported yet.`
+            );
+          else result[key] = variable;
+        }
+      });
+
+      return result;
+    }
+
+    const result = { ...this.#vars, ...this.#acl };
+    Object.keys(ACL.#DefaultVars).forEach((key) => {
+      delete result[key];
+    });
+    return result;
   }
 
   public get original() {
     return { ...this.#aclJson };
   }
 
+  static readonly #DefaultVars = {
+    "@r": SimpleDescriptor.r,
+    "@read": SimpleDescriptor.read,
+    "@w": SimpleDescriptor.w,
+    "@write": SimpleDescriptor.write,
+    "@rw": SimpleDescriptor.rw,
+    "@readWrite": SimpleDescriptor.readWrite,
+  };
+
   protected constructor(aclJson: AclJson) {
     this.#aclJson = aclJson;
     this.#acl = {};
     this.#vars = {
-      "@r": SimpleDescriptor.r,
-      "@read": SimpleDescriptor.read,
-      "@w": SimpleDescriptor.w,
-      "@write": SimpleDescriptor.write,
-      "@rw": SimpleDescriptor.rw,
-      "@readWrite": SimpleDescriptor.readWrite,
+      ...ACL.#DefaultVars,
     };
 
     Object.entries(aclJson).forEach(([key, des]) => {
@@ -114,6 +156,9 @@ export class ACL<Data extends {}, User extends { roles: string[] }> {
 
     const dataKeys = flatten(data);
     const aclKeys = Object.keys(this.#acl);
+
+    for (var key of aclKeys) {
+    }
   }
 
   private getDescriptor(path: string): Descriptor | undefined {
@@ -121,6 +166,7 @@ export class ACL<Data extends {}, User extends { roles: string[] }> {
       const descriptor = this.#acl[path];
 
       if (descriptor) {
+        // Evaluate variable descriptor.
         if (typeof descriptor === "string" && descriptor.startsWith("@")) {
           if (!this.#vars[descriptor])
             throw new VariableUndefined(
@@ -129,12 +175,17 @@ export class ACL<Data extends {}, User extends { roles: string[] }> {
           return this.#vars[descriptor];
         }
 
+        // Return found descriptor.
         return descriptor;
       }
     } else {
+      // Use implicit inheritance to find a matching parent descriptor.
       const segments = path.split(".");
       segments.pop();
       const parent = segments.join(".");
+
+      // Return undefined, if no matching descriptor was found.
+      if (parent === "") return undefined;
 
       return this.getDescriptor(parent);
     }
@@ -149,7 +200,7 @@ export class ACL<Data extends {}, User extends { roles: string[] }> {
     return new ACL(json);
   }
 
-  public static FromZod(zod: Zod.AnyZodObject) {
+  public static FromZod(zod: z.AnyZodObject) {
     ThrowNotImplemented("FromZod");
     return new ACL({});
   }
