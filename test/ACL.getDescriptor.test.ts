@@ -1,12 +1,13 @@
-import { ACL, SimpleDescriptor } from "../src/ACL";
+import { ACL } from "../src/ACL";
+import { SimpleDescriptorEnum } from "../src/Types";
 
 describe("ACL.getDescriptor()", () => {
   const acl = ACL.FromJson({
-    "test.descriptor": SimpleDescriptor.readWrite,
-    implicit: SimpleDescriptor.read,
+    "test.descriptor": SimpleDescriptorEnum.readWrite,
+    implicit: SimpleDescriptorEnum.read,
     "pre-defined-variable.descriptor": "@write",
     "@custom-var": {
-      d: SimpleDescriptor.readWrite,
+      d: SimpleDescriptorEnum.readWrite,
       roles: ["test-role"],
     },
     "custom-variable.descriptor": "@custom-var",
@@ -16,19 +17,19 @@ describe("ACL.getDescriptor()", () => {
 
   it("should find a classic defined the descriptor", () => {
     const descriptor = getDescriptor("test.descriptor");
-    expect(descriptor).toBe(SimpleDescriptor.readWrite);
+    expect(descriptor).toBe(SimpleDescriptorEnum.readWrite);
   });
 
   it("should find a descriptor by implicit inheritance", () => {
     const descriptor = getDescriptor("implicit.descriptor");
-    expect(descriptor).toBe(SimpleDescriptor.read);
+    expect(descriptor).toBe(SimpleDescriptorEnum.read);
   });
 
   it("should find a descriptor by implicit inheritance, even if it's deep and runs through an array", () => {
     const descriptor = getDescriptor(
       "implicit.descriptor.3.object-in-array.which-additionally-is-deep"
     );
-    expect(descriptor).toBe(SimpleDescriptor.read);
+    expect(descriptor).toBe(SimpleDescriptorEnum.read);
   });
 
   it("should not find a descriptor, if it or it's implicit parent does not exist", () => {
@@ -39,14 +40,14 @@ describe("ACL.getDescriptor()", () => {
   it("should resolve a predefined variable", () => {
     const descriptor = getDescriptor("pre-defined-variable.descriptor");
     expect(descriptor).not.toBe("@write");
-    expect(descriptor).toBe(SimpleDescriptor.write);
+    expect(descriptor).toBe(SimpleDescriptorEnum.write);
   });
 
   it("should resolve a custom variable", () => {
     const descriptor = getDescriptor("custom-variable.descriptor");
     expect(descriptor).not.toBe("@write");
     expect(descriptor).toStrictEqual({
-      d: SimpleDescriptor.readWrite,
+      d: SimpleDescriptorEnum.readWrite,
       roles: ["test-role"],
     });
   });

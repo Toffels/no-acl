@@ -106,4 +106,14 @@ describe("flatten", () => {
     const arrayInput = [1, 2, 3];
     expect(() => flatten(arrayInput as any)).not.toThrow();
   });
+
+  it("should only hold the path to the base types", () => {
+    const keys = Object.keys(
+      flatten({ deep: { deeper: { deepest: "deepest" } } })
+    );
+    expect(keys).not.toContain("deep");
+    expect(keys).not.toContain("deeper");
+    expect(keys).not.toContain("deep.deeper");
+    expect(keys).toContain("deep.deeper.deepest");
+  });
 });

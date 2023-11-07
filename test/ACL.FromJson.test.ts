@@ -1,8 +1,9 @@
-import { ACL, SimpleDescriptor } from "../src/ACL";
+import { ACL } from "../src/ACL";
+import { SimpleDescriptorEnum } from "../src/Types";
 
 describe("ACL.FromJson()", () => {
   const acl = ACL.FromJson({
-    "@custom-variable": SimpleDescriptor.rw,
+    "@custom-variable": SimpleDescriptorEnum.rw,
     example: "@custom-variable",
   });
 
@@ -18,7 +19,7 @@ describe("ACL.FromJson()", () => {
       const lines = toString.split("\n");
       expect(lines.length).toBeGreaterThan(0);
       expect(lines).toStrictEqual([
-        `@custom-variable: ${SimpleDescriptor.rw}`,
+        `@custom-variable: ${SimpleDescriptorEnum.rw}`,
         "example: @custom-variable",
       ]);
     });
@@ -32,7 +33,7 @@ describe("ACL.FromJson()", () => {
       expect(lines.length).toBeGreaterThan(0);
       expect(lines).toStrictEqual([
         // Line
-        `example: ${SimpleDescriptor.rw}`,
+        `example: ${SimpleDescriptorEnum.rw}`,
       ]);
     });
   });
@@ -46,7 +47,7 @@ describe("ACL.FromJson()", () => {
     it("contains the variable", () => {
       const toJson = acl.toJson();
       expect(toJson).toStrictEqual({
-        "@custom-variable": SimpleDescriptor.rw,
+        "@custom-variable": SimpleDescriptorEnum.rw,
         example: "@custom-variable",
       });
     });
@@ -56,7 +57,7 @@ describe("ACL.FromJson()", () => {
     it("does not contains the variable, but evaluates it", () => {
       const toJson = acl.toJson(true);
       expect(toJson).toStrictEqual({
-        example: SimpleDescriptor.rw,
+        example: SimpleDescriptorEnum.rw,
       });
     });
   });
@@ -65,7 +66,7 @@ describe("ACL.FromJson()", () => {
     it("should return the original input", () => {
       expect(typeof acl.original).toBe("object");
       expect(acl.original).toStrictEqual({
-        "@custom-variable": SimpleDescriptor.rw,
+        "@custom-variable": SimpleDescriptorEnum.rw,
         example: "@custom-variable",
       });
     });
