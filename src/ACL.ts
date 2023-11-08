@@ -14,6 +14,8 @@ import {
 import { DeepPartial } from "./DeepPartial";
 import { serializeDescriptor } from "./serialize";
 import { assureDescriptor } from "./parse";
+import { z } from "zod";
+import { FromZod } from "./FromZod";
 
 function getParentPath(path: string) {
   const segments = path.split(".");
@@ -304,8 +306,8 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
     return new ACL<Data, User>(json, strict);
   }
 
-  // public static FromZod(zod: z.AnyZodObject) {
-  //   ThrowNotImplemented("FromZod");
-  //   return new ACL({});
-  // }
+  public static FromZod(zod: z.AnyZodObject) {
+    const json = FromZod(zod);
+    return new ACL(json);
+  }
 }
