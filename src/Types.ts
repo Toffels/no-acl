@@ -33,15 +33,17 @@ export type SpecialDescriptor = {
   roles: Role | [Role, ...Role[]];
 };
 
+export type ArrayDescriptor = [
+  SpecialDescriptor | SimpleDescriptor,
+  ...(SpecialDescriptor | SimpleDescriptor)[]
+];
+
 export type Descriptor =
   | NeverDescriptor
   | SimpleDescriptor
   | VariableDescriptorKey
   | SpecialDescriptor
-  | [
-      SpecialDescriptor | SimpleDescriptor,
-      ...(SpecialDescriptor | SimpleDescriptor)[]
-    ];
+  | ArrayDescriptor;
 
 export type AclJson = {
   /** Variables */

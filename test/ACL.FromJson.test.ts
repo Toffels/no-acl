@@ -7,6 +7,8 @@ describe("ACL.FromJson()", () => {
     example: "@custom-variable",
   });
 
+  it.todo("should parse regex role check accordingly");
+
   describe("ACL.toString()", () => {
     it("should return a string", () => {
       const toString = acl.toString();
@@ -60,6 +62,8 @@ describe("ACL.FromJson()", () => {
         example: SimpleDescriptorEnum.rw,
       });
     });
+
+    it.todo("should serialize regex properly");
   });
 
   describe("ACL.original()", () => {

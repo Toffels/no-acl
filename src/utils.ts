@@ -141,3 +141,21 @@ export function setValueByPath<Input = unknown>(
     lastObj[lastKey] = value;
   }
 }
+
+export function parseRegexOrString(input: string): string | RegExp {
+  const match = input.match(/^regex#(.+)#([gimuys]*)$/);
+  if (match) {
+    // Unescape custom delimiter
+    const pattern = match[1].replace(/\\#/g, "#");
+    return new RegExp(pattern, match[2]);
+  }
+  return input;
+}
+
+export function serializeRegex(input: RegExp): string {
+  // Escape custom delimiter in the regex source
+  const escapedSource = input.source.replace(/#/g, "\\#");
+
+  // Convert the regex to a string and add the prefix with the escaped source
+  return `regex#${escapedSource}#${input.flags}`;
+}

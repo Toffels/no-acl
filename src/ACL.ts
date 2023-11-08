@@ -2,7 +2,7 @@ import * as z from "zod";
 import { InvalidInput } from "./errors/InvalidInput";
 import { NotImplemented, ThrowNotImplemented } from "./errors/NotImplemented";
 import { VariableUndefined } from "./errors/VariableUndefined";
-import { flatten } from "./utils";
+import { flatten, setValueByPath } from "./utils";
 import {
   Acl,
   AclJson,
@@ -13,6 +13,13 @@ import {
   VariableDescriptorKey,
 } from "./Types";
 import { DeepPartial } from "./DeepPartial";
+
+function getParentPath(path: string) {
+  const segments = path.split(".");
+  segments.pop();
+  const parent = segments.join(".");
+  return parent;
+}
 
 export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
   #acl: Acl;
@@ -172,7 +179,8 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
 
         const [descriptor, roles] = this.evalDescriptor(
           this.getDescriptor(key),
-          user
+          user,
+          type
         );
 
         // Checks whether the descriptor matches the input type.
@@ -190,6 +198,10 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
       }
 
     if (this.debug) console.log(logs);
+
+    for (var removal of removals) {
+      setValueByPath(data, removal, undefined);
+    }
 
     return [data, removals] as [data: DeepPartial<Data>, removals: string[]];
   }
@@ -216,9 +228,7 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
       }
     } else {
       // Use implicit inheritance to find a matching parent descriptor.
-      const segments = path.split(".");
-      segments.pop();
-      const parent = segments.join(".");
+      const parent = getParentPath(path);
 
       // Return undefined, if no matching descriptor was found.
       if (parent === "") return undefined;
@@ -229,7 +239,9 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
 
   private evalDescriptor(
     descriptor: Descriptor | undefined,
-    user: User
+    user: User,
+    /** filters the data by either read, write or readWrite access. */
+    type: SimpleDescriptorEnum.read | SimpleDescriptorEnum.write
   ): [descriptor: SimpleDescriptorEnum, roles?: string[]] {
     if (descriptor === undefined) {
       // Falls back to No.
@@ -242,7 +254,7 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
     if (typeof descriptor === "string") {
       if (descriptor.startsWith("@")) {
         const variable = descriptor as VariableDescriptorKey;
-        return this.evalDescriptor(this.#vars[variable], user);
+        return this.evalDescriptor(this.#vars[variable], user, type);
       }
       return [descriptor as SimpleDescriptorEnum];
 
@@ -250,13 +262,14 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
     } else if (Array.isArray(descriptor)) {
       const descriptors = descriptor;
       for (const descriptor of descriptors) {
-        const [d, r] = this.evalDescriptor(descriptor, user);
+        const [d, r] = this.evalDescriptor(descriptor, user, type);
 
+        // If it hits a SimpleDescriptor that matches, it's fine - take it.
+        if (!r && d === type) return [d];
         // A never-descriptor functions contraire to the default behavior of a array-descriptor: iterating until a positive match is found. Instead it opt's out.
         if (d === SimpleDescriptorEnum.never) return [d, r];
         // If there is matching roles and it's not a none-descriptor return first match.
-        if ((r?.length ?? 0) > 0 && d !== SimpleDescriptorEnum.none)
-          return [d, r];
+        if ((r?.length ?? 0) > 0 && d === type) return [d, r];
       }
 
       // SpecialDescriptor
@@ -277,12 +290,15 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
     if (data === undefined) throw new InvalidInput(`Can't be undefined.`);
   }
 
-  public static FromJson(json: AclJson, strict = true) {
-    return new ACL(json, strict);
+  public static FromJson<
+    Data extends {} = {},
+    User extends GenericUser = GenericUser
+  >(json: AclJson, strict = true) {
+    return new ACL<Data, User>(json, strict);
   }
 
-  public static FromZod(zod: z.AnyZodObject) {
-    ThrowNotImplemented("FromZod");
-    return new ACL({});
-  }
+  // public static FromZod(zod: z.AnyZodObject) {
+  //   ThrowNotImplemented("FromZod");
+  //   return new ACL({});
+  // }
 }
