@@ -1,6 +1,5 @@
-import * as z from "zod";
 import { InvalidInput } from "./errors/InvalidInput";
-import { NotImplemented, ThrowNotImplemented } from "./errors/NotImplemented";
+import { NotImplemented } from "./errors/NotImplemented";
 import { VariableUndefined } from "./errors/VariableUndefined";
 import { flatten, setValueByPath } from "./utils";
 import {
@@ -13,6 +12,8 @@ import {
   VariableDescriptorKey,
 } from "./Types";
 import { DeepPartial } from "./DeepPartial";
+import { serializeDescriptor } from "./serialize";
+import { assureDescriptor } from "./parse";
 
 function getParentPath(path: string) {
   const segments = path.split(".");
@@ -67,6 +68,12 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
     Object.keys(ACL.#DefaultVars).forEach((key) => {
       delete result[key];
     });
+
+    // Serialize the regex's
+    Object.entries(result).forEach(([key, val]) => {
+      result[key] = serializeDescriptor(val);
+    });
+
     return result;
   }
 
@@ -96,9 +103,9 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
 
     Object.entries(aclJson).forEach(([key, des]) => {
       if (key.startsWith("@")) {
-        this.#vars[key] = des;
+        this.#vars[key] = assureDescriptor(des);
       } else {
-        this.#acl[key] = des;
+        this.#acl[key] = assureDescriptor(des);
       }
     });
   }

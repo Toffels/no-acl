@@ -142,17 +142,21 @@ export function setValueByPath<Input = unknown>(
   }
 }
 
-export function parseRegexOrString(input: string): string | RegExp {
-  const match = input.match(/^regex#(.+)#([gimuys]*)$/);
-  if (match) {
-    // Unescape custom delimiter
-    const pattern = match[1].replace(/\\#/g, "#");
-    return new RegExp(pattern, match[2]);
+export function parseRegexOrString(input: string | RegExp): string | RegExp {
+  if (typeof input === "string") {
+    const match = input.match(/^regex#(.+)#([gimuys]*)$/);
+    if (match) {
+      // Unescape custom delimiter
+      const pattern = match[1].replace(/\\#/g, "#");
+      return new RegExp(pattern, match[2]);
+    }
   }
+
   return input;
 }
 
-export function serializeRegex(input: RegExp): string {
+export function serializeRegex(input: string | RegExp): string {
+  if (typeof input === "string") return input;
   // Escape custom delimiter in the regex source
   const escapedSource = input.source.replace(/#/g, "\\#");
 

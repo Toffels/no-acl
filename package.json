@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc",
     "test": "jest --watch",
-    "lint": "eslint . --ext .ts"
+    "lint": "eslint . --ext .ts",
+    "cloc": "git ls-files | xargs cloc"
   },
   "keywords": [],
   "author": "",
