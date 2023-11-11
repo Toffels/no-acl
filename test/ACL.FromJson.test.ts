@@ -1,5 +1,6 @@
 import { ACL } from "../src/ACL";
-import { SimpleDescriptorEnum } from "../src/Types";
+import { SimpleDescriptorEnum, SpecialDescriptor } from "../src/Types";
+import { getValueByPath } from "../src/utils";
 
 describe("ACL.FromJson()", () => {
   const acl = ACL.FromJson({
@@ -7,7 +8,32 @@ describe("ACL.FromJson()", () => {
     example: "@custom-variable",
   });
 
-  it.todo("should parse regex role check accordingly");
+  it("should parse regex role check accordingly", () => {
+    const acl = ACL.FromJson({
+      test_xx: { d: SimpleDescriptorEnum.rw, roles: [/any/] },
+    });
+
+    const json = acl.toJson();
+    const acl2 = ACL.FromJson(json);
+
+    expect(acl.original).toStrictEqual(acl2.original);
+    expect(acl.toString()).toStrictEqual(acl2.toString());
+
+    expect(acl.acl).toStrictEqual(acl2.acl);
+    expect(getValueByPath(acl2.acl, "test_xx.roles.0")).toBeInstanceOf(RegExp);
+  });
+
+  it("should serialize regex properly", () => {
+    const acl = ACL.FromJson({
+      test_xx: { d: SimpleDescriptorEnum.rw, roles: [/any/] },
+    });
+
+    const json = acl.toJson();
+
+    expect((json.test_xx as SpecialDescriptor).roles).toStrictEqual([
+      "regex#any#",
+    ]);
+  });
 
   describe("ACL.toString()", () => {
     it("should return a string", () => {
@@ -62,8 +88,6 @@ describe("ACL.FromJson()", () => {
         example: SimpleDescriptorEnum.rw,
       });
     });
-
-    it.todo("should serialize regex properly");
   });
 
   describe("ACL.original()", () => {

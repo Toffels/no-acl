@@ -5,6 +5,7 @@ import { flatten, setValueByPath } from "./utils";
 import {
   Acl,
   AclJson,
+  ArrayDescriptor,
   Descriptor,
   GenericUser,
   SimpleDescriptorEnum,
@@ -16,6 +17,7 @@ import { serializeDescriptor } from "./serialize";
 import { assureDescriptor } from "./parse";
 import { z } from "zod";
 import { FromZod } from "./FromZod";
+import { getWildCardPaths } from "./getWildCardPaths";
 
 function getParentPath(path: string) {
   const segments = path.split(".");
@@ -28,6 +30,10 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
   #acl: Acl;
   #vars: Acl;
   #aclJson: Acl;
+
+  public get acl() {
+    return { ...this.#acl };
+  }
 
   public debug = false;
 
@@ -163,6 +169,7 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
 
     // Setup tracking of to be removed keys.
     const removals: string[] = [];
+    const match: Record<string, undefined | string | string[]> = {};
     const logs: string[] = [];
 
     if (this.debug) console.log("flatDataKeys", flatDataKeys);
@@ -183,9 +190,11 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
             logs.push(
               `  Skip: '${key}' matches already removed key: '${matchingKeyInRemovals}'`
             );
+
           continue;
         }
 
+        if (this.debug) match[key] = this.getDescriptor(key, true);
         const [descriptor, roles] = this.evalDescriptor(
           this.getDescriptor(key),
           user,
@@ -206,7 +215,10 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
         }
       }
 
-    if (this.debug) console.log(logs);
+    if (this.debug) {
+      console.log(logs);
+      console.log(match);
+    }
 
     for (var removal of removals) {
       setValueByPath(data, removal, undefined);
@@ -218,7 +230,15 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
   /** Gets the plain descriptor by path.
    * If explicit descriptor is not defined, it will implicitly try to find the ancient descriptor.
    */
-  private getDescriptor(path: string): Descriptor | undefined {
+  private getDescriptor(path: string): Descriptor | undefined;
+  private getDescriptor(
+    path: string,
+    debug: true
+  ): string | string[] | undefined;
+  private getDescriptor(
+    path: string,
+    debug = false
+  ): Descriptor | string | string[] | undefined {
     if (this.#acl[path]) {
       const descriptor = this.#acl[path];
 
@@ -229,20 +249,36 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
             throw new VariableUndefined(
               `Variable '${descriptor}' used by '${path}' is not defined.`
             );
-          return this.#vars[descriptor];
+          return debug ? descriptor : this.#vars[descriptor];
         }
 
         // Return found descriptor.
-        return descriptor;
+        return debug ? path : descriptor;
       }
     } else {
+      const wildcards = getWildCardPaths(path, Object.keys(this.#acl))?.sort();
+      // console.log(path, wildcards);
+      if (wildcards) {
+        const descriptors = wildcards
+          .map((wildcard) => this.getDescriptor(wildcard))
+          .reduce(
+            (result: ArrayDescriptor, current: Descriptor | undefined) => {
+              if (Array.isArray(current))
+                return <ArrayDescriptor>[...result, ...current];
+              if (current) return <ArrayDescriptor>[...result, current];
+              return result;
+            },
+            [] as unknown as ArrayDescriptor
+          );
+        return debug ? wildcards : descriptors;
+      }
+
       // Use implicit inheritance to find a matching parent descriptor.
       const parent = getParentPath(path);
-
       // Return undefined, if no matching descriptor was found.
       if (parent === "") return undefined;
 
-      return this.getDescriptor(parent);
+      return this.getDescriptor(parent, debug as true);
     }
   }
 

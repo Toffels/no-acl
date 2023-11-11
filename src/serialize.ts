@@ -8,12 +8,14 @@ export function serializeDescriptor(descriptor: Descriptor): Descriptor {
       return descriptor.map(serializeDescriptor) as ArrayDescriptor;
       // Special
     } else {
-      if (descriptor.roles instanceof RegExp)
-        descriptor.roles = serializeRegex(descriptor.roles);
-      else if (Array.isArray(descriptor.roles)) {
-        const roles = descriptor.roles.map(serializeRegex);
-        descriptor.roles = [roles.shift()!, ...roles];
+      const copy = { ...descriptor };
+      if (copy.roles instanceof RegExp) copy.roles = serializeRegex(copy.roles);
+      else if (Array.isArray(copy.roles)) {
+        const roles = copy.roles.map(serializeRegex);
+        copy.roles = [roles.shift()!, ...roles];
       }
+
+      return copy;
     }
   }
 
