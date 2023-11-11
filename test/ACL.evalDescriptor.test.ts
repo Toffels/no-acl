@@ -1,9 +1,5 @@
 import { ACL } from "../src/ACL";
-import {
-  ArrayDescriptor,
-  Descriptor,
-  SimpleDescriptorEnum,
-} from "../src/Types";
+import { ArrayDescriptor, SimpleDescriptorEnum } from "../src/Types";
 
 describe("ACL.evalDescriptor()", () => {
   const user = { roles: ["test-role"] };
@@ -43,11 +39,30 @@ describe("ACL.evalDescriptor()", () => {
     ).toStrictEqual([SimpleDescriptorEnum.never, ["test-role"]]);
   });
 
-  it.todo(
-    "should return a never-descriptor, if any parent has a never descriptor for the roles of this user"
-  );
+  it("should return a never-descriptor, if any parent has a never descriptor for the roles of this user", () => {
+    const descriptor: ArrayDescriptor = [
+      { d: SimpleDescriptorEnum.readWrite, roles: ["admin"] },
+      { d: SimpleDescriptorEnum.none, roles: ["test-role"] },
+      SimpleDescriptorEnum.read,
+      { d: SimpleDescriptorEnum.never, roles: [/test-.*/] },
+    ];
 
-  it.todo("should be able to handle wild card descriptors");
+    expect(
+      evalDescriptor(descriptor, user, SimpleDescriptorEnum.read)
+    ).toStrictEqual([SimpleDescriptorEnum.never, ["test-role"]]);
+  });
 
-  it.todo("should properly handle regex roles checks");
+  it("should properly handle regex roles checks", () => {
+    const descriptor: ArrayDescriptor = [
+      { d: SimpleDescriptorEnum.readWrite, roles: ["admin"] },
+      { d: SimpleDescriptorEnum.readWrite, roles: ["other-admin"] },
+      { d: SimpleDescriptorEnum.readWrite, roles: ["TenantAdmin"] },
+      { d: SimpleDescriptorEnum.read, roles: [/test-.*/] },
+      SimpleDescriptorEnum.none,
+    ];
+
+    expect(
+      evalDescriptor(descriptor, user, SimpleDescriptorEnum.read)
+    ).toStrictEqual([SimpleDescriptorEnum.read, ["test-role"]]);
+  });
 });

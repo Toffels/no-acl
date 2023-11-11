@@ -269,14 +269,22 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
 
       // ArrayDescriptor
     } else if (Array.isArray(descriptor)) {
-      const descriptors = descriptor;
-      for (const descriptor of descriptors) {
-        const [d, r] = this.evalDescriptor(descriptor, user, type);
+      const evaluatedDescriptors = descriptor.map((_d) =>
+        this.evalDescriptor(_d, user, type)
+      );
+
+      const neverDescriptor = evaluatedDescriptors.find(
+        ([d]) => d === SimpleDescriptorEnum.never
+      );
+
+      // Force opt out when never descriptor is found!
+      if (neverDescriptor) return neverDescriptor;
+
+      for (const descriptor of evaluatedDescriptors) {
+        const [d, r] = descriptor;
 
         // If it hits a SimpleDescriptor that matches, it's fine - take it.
         if (!r && d === type) return [d];
-        // A never-descriptor functions contraire to the default behavior of a array-descriptor: iterating until a positive match is found. Instead it opt's out.
-        if (d === SimpleDescriptorEnum.never) return [d, r];
         // If there is matching roles and it's not a none-descriptor return first match.
         if ((r?.length ?? 0) > 0 && d === type) return [d, r];
       }

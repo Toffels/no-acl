@@ -78,8 +78,20 @@ describe("ACL.apply() strict", () => {
     expect(applied?.obj).toBe(undefined);
   });
 
+  /** Any never will overwrite any other descriptor
+   * This way you can specify something like this:
+   * 
+   * ```
+   * user = { roles: ["test", "not-allowed-to"] }
+   * [
+      { d: SimpleDescriptorEnum.write, roles: ["test"] },
+      { d: SimpleDescriptorEnum.read, roles: ["test"] },
+      { d: SimpleDescriptorEnum.never, roles: ["not-allowed-to"] },
+     ]
+      ```
+   */
   it("should stop searching for a truthy descriptor, if it hits never descriptor", () => {
-    const user = { roles: ["test"] };
+    const user = { roles: ["test", "not-allowed-to"] };
     const acl = ACL.FromJson<{
       value: string;
     }>(
@@ -87,7 +99,7 @@ describe("ACL.apply() strict", () => {
         value: [
           { d: SimpleDescriptorEnum.write, roles: ["test"] },
           { d: SimpleDescriptorEnum.never, roles: ["test"] },
-          { d: SimpleDescriptorEnum.read, roles: ["test"] },
+          { d: SimpleDescriptorEnum.read, roles: ["not-allowed-to"] },
         ],
       },
       true
@@ -103,8 +115,8 @@ describe("ACL.apply() strict", () => {
     {
       const [applied, removals] = acl.write({ value: "value" }, user);
 
-      expect(removals).not.toContain("value");
-      expect(applied.hasOwnProperty("value")).toBe(true);
+      expect(removals).toContain("value");
+      expect(applied.hasOwnProperty("value")).toBe(false);
     }
   });
 });
