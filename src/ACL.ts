@@ -319,10 +319,16 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
       for (const descriptor of evaluatedDescriptors) {
         const [d, r] = descriptor;
 
+        const matchTheType = type === d || d === SimpleDescriptorEnum.readWrite;
+
         // If it hits a SimpleDescriptor that matches, it's fine - take it.
-        if (!r && d === type) return [d];
+        if (!r && matchTheType) return [d];
         // If there is matching roles and it's not a none-descriptor return first match.
-        if ((r?.length ?? 0) > 0 && d === type) return [d, r];
+        if (
+          ((r?.length ?? 0) > 0 && matchTheType) ||
+          d === SimpleDescriptorEnum.readWrite
+        )
+          return [d, r];
       }
 
       // SpecialDescriptor

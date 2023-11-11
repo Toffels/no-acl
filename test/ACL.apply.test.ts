@@ -155,3 +155,115 @@ describe("ACL.apply() not strict", () => {
     expect(removals).not.toContain("unset");
   });
 });
+
+describe("ACL.apply() additional tests", () => {
+  it("should correctly apply descriptors to paths with wildcards", () => {
+    const acl = ACL.FromJson<{ example: { dropped: any } }>({
+      "example.*": SimpleDescriptorEnum.read,
+      "example.dropped.*": SimpleDescriptorEnum.none,
+    });
+
+    const data = {
+      example: { allowed: "value", dropped: { sensitive: "secret" } },
+    };
+
+    const [applied, removals] = acl.read(data, user);
+    expect(applied.example?.hasOwnProperty("allowed")).toBe(true);
+    expect(applied.example?.dropped).toStrictEqual({});
+    expect(removals).toContain("example.dropped.sensitive");
+  });
+
+  it("should correctly handle multiple roles with different descriptors", () => {
+    const user = { roles: ["admin", "user"] };
+    const acl = ACL.FromJson({
+      sensitive: [
+        { d: SimpleDescriptorEnum.never, roles: ["user"] },
+        { d: SimpleDescriptorEnum.readWrite, roles: ["admin"] },
+      ],
+    });
+
+    const data = { sensitive: "data" };
+
+    const [applied, removals] = acl.read(data, user);
+    expect(applied.hasOwnProperty("sensitive"))
+      // The reason for this is, that a never will be prioritized
+      .toBe(false);
+    expect(removals).toContain("sensitive");
+  });
+
+  it("should correctly handle multiple roles with different descriptors 2", () => {
+    const user = { roles: ["admin", "user"] };
+    const acl = ACL.FromJson({
+      sensitive: [
+        { d: SimpleDescriptorEnum.none, roles: ["user"] },
+        { d: SimpleDescriptorEnum.readWrite, roles: ["admin"] },
+      ],
+    });
+
+    const data = { sensitive: "data" };
+
+    const [applied, removals] = acl.read(data, user);
+    expect(applied.hasOwnProperty("sensitive")).toBe(
+      user.roles.includes("admin")
+    );
+    expect(removals).not.toContain("sensitive");
+  });
+
+  it("should allow read but disallow write for a specific role", () => {
+    const user = { roles: ["readOnlyUser"] };
+    const acl = ACL.FromJson({
+      config: [{ d: SimpleDescriptorEnum.read, roles: ["readOnlyUser"] }],
+    });
+
+    const data = { config: "configuration data" };
+
+    const [appliedRead, removalsRead] = acl.read(data, user);
+    expect(appliedRead.hasOwnProperty("config")).toBe(true);
+
+    const [appliedWrite, removalsWrite] = acl.write(data, user);
+    expect(appliedWrite.hasOwnProperty("config")).toBe(false);
+  });
+
+  it("should not remove unknown fields in non-strict mode", () => {
+    const data = { unknownField: "value" };
+    const acl = ACL.FromJson(
+      {
+        config: [{ d: SimpleDescriptorEnum.read, roles: ["readOnlyUser"] }],
+      },
+      false
+    );
+
+    const [applied, removals] = acl.read(data, user);
+    expect(applied.hasOwnProperty("unknownField")).toBe(true);
+    expect(removals).not.toContain("unknownField");
+  });
+
+  it.todo("should correctly apply descriptors to array elements");
+  it.todo(
+    "should resolve conflicts between multiple descriptors for the same path"
+  );
+  it.todo("should handle nested wildcards in ACL paths correctly");
+  it.todo("should correctly apply write-only descriptors to specified fields");
+  it.todo(
+    "should effectively handle overlapping roles with different access levels"
+  );
+  it.todo(
+    "should preserve the integrity of nested objects after applying descriptors"
+  );
+  it.todo(
+    "should properly handle array elements with specific role-based access"
+  );
+  it.todo("should validate the behavior when no roles are assigned to a user");
+  it.todo(
+    "should ensure that fields with 'readWrite' descriptors are both readable and writable"
+  );
+  it.todo(
+    "should test the removal of fields based on user roles in a complex object hierarchy"
+  );
+  it.todo(
+    "should verify the behavior when conflicting descriptors are applied to the same path"
+  );
+  it.todo(
+    "should assess the performance of ACL.apply() on large and deeply nested objects"
+  );
+});
