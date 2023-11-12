@@ -20,7 +20,8 @@ describe("ZAcl", () => {
 
   const myComplexSchema = ZAcl(
     z.object({
-      string: za("@r", z.string().min(5).max(100).email()),
+      string: za("@r", z.string()),
+      email: za("@r", z.string().min(5).max(100).email()),
       number_int: za("@r", z.number().int().positive().lt(100)),
       boolean: za("@r", z.boolean().default(false)),
       nullish: za("@r", z.null().optional()),
@@ -36,8 +37,8 @@ describe("ZAcl", () => {
       object: za(
         "@r",
         z.object({
-          nested: za("@r", z.string()).url(),
-          anotherNumber: za("@r", z.number()).nonnegative(),
+          nested: za("@r", z.string().url()),
+          anotherNumber: za("@r", z.number().nonnegative()),
         })
       ),
       tuple: za("@r", z.tuple([z.string(), z.number(), z.boolean()])),
@@ -45,22 +46,40 @@ describe("ZAcl", () => {
       intersection: za(
         "@r",
         z.intersection(
-          z.object({ shared: za("@r", z.string()) }),
-          z.object({ unique: za("@r", z.number().optional()) })
+          za("@r", z.object({ shared: za("@r", z.string()) })),
+          za(
+            "@r",
+            z.object({
+              shared: za("@r", z.string()),
+              unique: za("@r", z.number().optional()),
+            })
+          )
         )
       ),
       enum: za("@r", z.enum(["Cat", "Dog", "Bird"])),
       literal: za("@r", z.literal(42)),
       date: za("@r", z.date().or(z.string().transform((str) => new Date(str)))),
       promise: za("@r", z.promise(z.string())),
-      record: za("@r", z.record(z.number())),
+      record: za(
+        "@r",
+        z.record(
+          z.object({
+            number: za("@r", z.number()),
+            obj: za(
+              "@r",
+              z.object({
+                str: za("@r", z.string()),
+              })
+            ),
+            rec: za("@r", z.record(z.string())),
+          })
+        )
+      ),
+
       map: za("@r", z.map(z.string(), z.number())),
       set: za("@r", z.set(z.string())),
       function: za("@r", z.function(z.tuple([z.string()]), z.number())),
-      // lazy: za(
-      //   "@r",
-      //   z.lazy(() => myComplexSchema )
-      // ), // for recursive types
+
       refinement: za(
         "@r",
         z.string().refine((val) => val.startsWith("Hello"), {
@@ -98,4 +117,50 @@ describe("ZAcl", () => {
       // ... you can continue adding other complex structures as needed
     })
   );
+
+  it("should fetch the acl from the zod definition", () => {
+    expect(myComplexSchema.acl.original).toStrictEqual({
+      string: "@r",
+      email: "@r",
+      number_int: "@r",
+      boolean: "@r",
+      nullish: "@r",
+      array: "@r",
+      object: "@r",
+      "object.nested": "@r",
+      "object.anotherNumber": "@r",
+      tuple: "@r",
+      union: "@r",
+      intersection: "@r",
+      "intersection.shared": "@r",
+      "intersection.unique": "@r",
+      enum: "@r",
+      literal: "@r",
+      date: "@r",
+      promise: "@r",
+      record: "@r",
+      "record.*": "@r",
+      "record.*.number": "@r",
+      "record.*.obj": "@r",
+      "record.*.obj.str": "@r",
+      "record.*.rec": "@r",
+      "record.*.rec.*": "@r",
+      map: "@r",
+      set: "@r",
+      function: "@r",
+      refinement: "@r",
+      preprocess: "@r",
+      bigint: "@r",
+      any: "@r",
+      unknown: "@r",
+      void: "@r",
+      never: "@r",
+      optional: "@r",
+      nullable: "@r",
+      default: "@r",
+      transform: "@r",
+      brand: "@r",
+      custom: "@r",
+    });
+  });
 });

@@ -4,7 +4,7 @@ module.exports = (env) => {
   return {
     entry: "./src/index.ts", // Replace with your entry file
     target: env.target === "web" ? "web" : "node", // Default to 'node' if not specified
-    mode: "production", // or 'development'
+    mode: "development", // 'production' or 'development'
     module: {
       rules: [
         {

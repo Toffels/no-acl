@@ -15,7 +15,8 @@
         function Core() {
             const myComplexSchema = ZAcl(
                 z.object({
-                    string: za("@r", z.string().min(5).max(100).email()),
+                    string: za("@r", z.string()),
+                    email: za("@r", z.string().min(5).max(100).email()),
                     number_int: za("@r", z.number().int().positive().lt(100)),
                     boolean: za("@r", z.boolean().default(false)),
                     nullish: za("@r", z.null().optional()),
@@ -94,6 +95,7 @@
                 })
             );
             globalThis["myComplexSchema"] = myComplexSchema;
+            console.log(myComplexSchema)
         }
 
         setTimeout(Core, 100)

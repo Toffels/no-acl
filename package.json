@@ -8,6 +8,7 @@
     "lint": "eslint . --ext .ts",
     "cloc": "git ls-files | xargs cloc",
     "build": "webpack --env target=node && webpack --env target=web",
+    "build-web": "webpack --watch --env target=web",
     "pretest-web": "npm run build",
     "test-web": "http-server -d -c"
   },
