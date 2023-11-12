@@ -135,11 +135,12 @@ export function setValueByPath<Input = unknown>(
     return current[key];
   }, obj);
 
-  if (value === undefined) {
-    delete lastObj[lastKey];
-  } else {
-    lastObj[lastKey] = value;
-  }
+  if (lastObj)
+    if (value === undefined) {
+      delete lastObj[lastKey];
+    } else {
+      lastObj[lastKey] = value;
+    }
 }
 
 export function parseRegexOrString(input: string | RegExp): string | RegExp {

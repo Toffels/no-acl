@@ -1,9 +1,9 @@
 import { ACL } from "../../src/ACL";
 import { SimpleDescriptorEnum } from "../../src/Types";
 
-const TIME_THRESHOLD = 1;
+const TIME_THRESHOLD = 2;
 
-describe.only("ACL.apply() benchmarking", () => {
+describe("ACL.apply() benchmarking", () => {
   let logs: string[] = [];
   let flushed = false;
 

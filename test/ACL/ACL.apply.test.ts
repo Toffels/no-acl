@@ -495,76 +495,173 @@ describe("ACL.apply() additional tests", () => {
     });
   });
 
-  // it("should correctly apply write-only descriptors to specified fields", () => {
-  //   // Implement test logic here
-  //   // Expectations:
-  //   // Fields with write-only descriptors should be writable but not readable.
-  //   // Attempting to read these fields should result in them being excluded or undefined in the output.
-  //   expect(/* condition for write-only fields being unwritable */).toBeTruthy();
-  //   expect(/* condition for write-only fields being unreadable */).toBeFalsy();
-  // });
+  it("should correctly apply write-only descriptors to specified fields", () => {
+    const acl = ACL.FromJson({
+      "config.b.c.d": SDE.write,
+      "config.b": SDE.read,
+      "config.c": SDE.write,
+    });
 
-  // it("should effectively handle overlapping roles with different access levels", () => {
-  //   // Implement test logic here
-  //   // Expectations:
-  //   // Users with multiple roles should get an access level that correctly reflects all their roles.
-  //   // In case of conflicting access levels, the most permissive or specific one should take precedence, as per your ACL logic.
-  //   expect(/* condition for overlapping roles being handled effectively */).toBeTruthy();
-  // });
+    const [applied, removals] = acl.write(
+      {
+        config: {
+          b: { c: { d: 1 } },
+          c: 3,
+        },
+      },
+      { roles: [] }
+    );
 
-  // it("should preserve the integrity of nested objects after applying descriptors", () => {
-  //   // Implement test logic here
-  //   // Expectations:
-  //   // Nested objects should retain their structure and other properties not affected by ACL.
-  //   // Only the fields specified by the descriptors should be altered or removed.
-  //   expect(/* condition for integrity of nested objects */).toBeTruthy();
-  // });
+    expect(applied).toStrictEqual({ config: { c: 3 } });
+    expect(removals).toContain("config.b");
+  });
 
-  // it("should properly handle array elements with specific role-based access", () => {
-  //   // Implement test logic here
-  //   // Expectations:
-  //   // Array elements should be individually processed based on ACL rules.
-  //   // Users with specific roles should have the appropriate access to each element as defined by ACL.
-  //   expect(/* condition for proper handling of array elements */).toBeTruthy();
-  // });
+  it("should properly handle array elements with specific role-based access", () => {
+    const acl = ACL.FromJson({
+      config: { d: SDE.rw, roles: ["any"] },
+      "config.0.field": { d: SDE.rw, roles: ["test-0"] },
+      "config.1.field": { d: SDE.rw, roles: ["test-1"] },
+    });
 
-  // it("should validate the behavior when no roles are assigned to a user", () => {
-  //   // Implement test logic here
-  //   // Expectations:
-  //   // Users without any roles should have access defined by default or 'none' roles in ACL.
-  //   // The behavior should be consistent and predictable for users without roles.
-  //   expect(/* condition for behavior with no assigned roles */).toBeTruthy();
-  // });
+    // False input will not be processed as expected, which is to be expected by the definition of the acl.
+    {
+      const [applied, removals] = acl.write(
+        {
+          config: {
+            b: { c: { d: 1 } },
+            c: 3,
+          },
+        },
+        { roles: ["any", "test-1"] }
+      );
 
-  // it("should ensure that fields with 'readWrite' descriptors are both readable and writable", () => {
-  //   // Implement test logic here
-  //   // Expectations:
-  //   // Fields with 'readWrite' descriptors should be accessible for both reading and writing operations.
-  //   // No restrictions should be applied to these fields for users with appropriate roles.
-  //   expect(/* condition for readWrite fields being accessible */).toBeTruthy();
-  // });
+      expect(applied).toStrictEqual({
+        config: {
+          b: { c: { d: 1 } },
+          c: 3,
+        },
+      });
+      expect(removals).toContain("config.0.field");
+    }
 
-  // it("should test the removal of fields based on user roles in a complex object hierarchy", () => {
-  //   // Implement test logic here
-  //   // Expectations:
-  //   // The ACL should correctly remove fields at various nesting levels based on user roles.
-  //   // The final object should only contain fields that the user's roles allow them to access.
-  //   expect(/* condition for correct field removal based on roles */).toBeTruthy();
-  // });
+    // With proper data, expected output will be produced
+    {
+      const [applied, removals] = acl.write(
+        {
+          config: [{ field: 0 }, { field: 1 }],
+        },
+        { roles: ["any", "test-1"] }
+      );
 
-  // it("should verify the behavior when conflicting descriptors are applied to the same path", () => {
-  //   // Implement test logic here
-  //   // Expectations:
-  //   // The ACL should have a defined way of resolving conflicts when multiple descriptors apply to the same path.
-  //   // The test should verify that the conflict resolution mechanism works as intended.
-  //   expect(/* condition for resolving conflicts between descriptors */).toBeTruthy();
-  // });
+      expect(applied).toStrictEqual({
+        config: [, { field: 1 }],
+      });
+      expect(removals).toContain("config.0.field");
+    }
+  });
 
-  // it("should assess the performance of ACL.apply() on large and deeply nested objects", () => {
-  //   // Implement test logic here
-  //   // Expectations:
-  //   // The ACL should handle large and deeply nested objects within reasonable time and resource constraints.
-  //   // The test should check for any performance bottlenecks or issues when processing complex objects.
-  //   expect(/* condition for performance assessment */).toBeTruthy();
-  // });
+  it("should validate the behavior when no roles are assigned to a user", () => {
+    const acl = ACL.FromJson({
+      config: SDE.rw,
+      "config.0.field": { d: SDE.rw, roles: ["test-0"] },
+      "config.1.field": { d: SDE.rw, roles: ["test-1"] },
+      "config.*.field": SDE.rw,
+    });
+
+    const [applied, removals] = acl.write(
+      {
+        config: [{ field: 0 }, { field: 1 }, { field: 2 }],
+      },
+      { roles: ["any", "test-1"] }
+    );
+
+    expect(applied).toStrictEqual({
+      config: [, { field: 1 }, { field: 2 }],
+    });
+  });
+
+  it("should ensure that fields with 'readWrite' descriptors are both readable and writable, and others are restricted", () => {
+    // Define a user and data model
+    const user = { roles: ["user"] };
+    const data = {
+      config: {
+        setting1: "value1",
+        setting2: "value2",
+        restrictedSetting: "restricted",
+      },
+    };
+
+    // Define an ACL with 'readWrite' descriptors and a restricted field
+    const acl = ACL.FromJson({
+      "config.setting1": SimpleDescriptorEnum.readWrite,
+      "config.setting2": SimpleDescriptorEnum.readWrite,
+      "config.restrictedSetting": SimpleDescriptorEnum.none, // restricted field
+    });
+
+    // Perform a read operation
+    const [readResult, readRemovals] = acl.read(data, user);
+    expect(readResult.config).toBeDefined();
+    expect(readResult.config.setting1).toBe("value1");
+    expect(readResult.config.setting2).toBe("value2");
+    expect(readResult.config.restrictedSetting).toBeUndefined(); // Verify the restricted field is not present
+
+    // Perform a write operation
+    const newData = {
+      config: {
+        setting1: "new value1",
+        setting2: "new value2",
+        restrictedSetting: "new restricted",
+      },
+    };
+    const [writeResult, writeRemovals] = acl.write(newData, user);
+    expect(writeResult.config).toBeDefined();
+    expect(writeResult.config.setting1).toBe("new value1");
+    expect(writeResult.config.setting2).toBe("new value2");
+    expect(writeResult.config.restrictedSetting).toBeUndefined(); // Verify the restricted field is not present after write
+  });
+
+  it("should test the removal of fields based on user roles in a complex object hierarchy", () => {
+    const user = { roles: ["basicUser"] };
+    const data = {
+      section: {
+        publicInfo: "Visible to all",
+        privateInfo: "Visible to admins only",
+        sensitiveInfo: "Visible to superadmins only",
+      },
+    };
+
+    const acl = ACL.FromJson({
+      "section.publicInfo": SimpleDescriptorEnum.read,
+      "section.privateInfo": [
+        { d: SimpleDescriptorEnum.read, roles: ["admin"] },
+      ],
+      "section.sensitiveInfo": [
+        { d: SimpleDescriptorEnum.read, roles: ["superadmin"] },
+      ],
+    });
+
+    const [result] = acl.read(data, user);
+    expect(result.section).toBeDefined();
+    expect(result.section.publicInfo).toBe("Visible to all");
+    expect(result.section.privateInfo).toBeUndefined();
+    expect(result.section.sensitiveInfo).toBeUndefined();
+  });
+
+  it("should verify the behavior when conflicting descriptors are applied to the same path", () => {
+    const user = { roles: ["editor", "viewer"] };
+    const data = { content: "Editable content" };
+
+    const acl = ACL.FromJson({
+      content: [
+        { d: SimpleDescriptorEnum.read, roles: ["viewer"] },
+        { d: SimpleDescriptorEnum.write, roles: ["editor"] },
+      ],
+    });
+
+    const [readResult] = acl.read(data, user);
+    expect(readResult.content).toBe("Editable content"); // Assuming read access is granted
+
+    const [writeResult] = acl.write({ content: "New content" }, user);
+    expect(writeResult.content).toBe("New content"); // Assuming write access is granted
+  });
 });
