@@ -26,7 +26,8 @@ export function removeEmptyObjects<O extends Record<string, any>>(obj: O): O {
         // If the object is not empty, recursively call removeEmptyObjects
         // and assign the result to the current key in the result object.
         if (!isEmptyObject(value)) {
-          result[i] = removeEmptyObjects(value);
+          const val = removeEmptyObjects(value);
+          result[i] = val;
         }
       } else {
         // If the value is not an object, directly assign it to the result object.
@@ -49,7 +50,8 @@ export function removeEmptyObjects<O extends Record<string, any>>(obj: O): O {
         // If the object is not empty, recursively call removeEmptyObjects
         // and assign the result to the current key in the result object.
         if (!isEmptyObject(value)) {
-          result[key] = removeEmptyObjects(value);
+          const val = removeEmptyObjects(value);
+          if (!isEmptyObject(val)) result[key] = val;
         }
       } else {
         // If the value is not an object, directly assign it to the result object.

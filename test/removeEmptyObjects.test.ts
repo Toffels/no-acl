@@ -10,7 +10,7 @@ describe("removeEmptyObjects", () => {
 
   it("should remove nested empty objects", () => {
     const input = { a: 1, b: { c: {} } };
-    const expected = { a: 1, b: {} };
+    const expected = { a: 1 };
     expect(removeEmptyObjects(input)).toEqual(expected);
   });
 
@@ -33,7 +33,7 @@ describe("removeEmptyObjects", () => {
 
   it("should handle deeply nested empty objects", () => {
     const input = { a: { b: { c: {} } } };
-    const expected = { a: { b: {} } };
+    const expected = {};
     expect(removeEmptyObjects(input)).toEqual(expected);
   });
 
@@ -93,7 +93,7 @@ describe("removeEmptyObjects", () => {
 
     it("should handle deeply nested objects", () => {
       const input = { a: { b: { c: {} } } };
-      const expected = { a: { b: {} } };
+      const expected = {};
       expect(removeEmptyObjects(input)).toEqual(expected);
     });
 
@@ -124,5 +124,15 @@ describe("removeEmptyObjects", () => {
       };
       expect(removeEmptyObjects(input)).toEqual(expected);
     });
+  });
+
+  it("should handle deepness", () => {
+    const input = {
+      a: { b: { c: { d: { e: { f: {} } } } } },
+      b: [{ c: { d: { e: { f: {} } } } }],
+    };
+    const expected = { b: [{}] };
+
+    expect(removeEmptyObjects(input)).toEqual(expected);
   });
 });
