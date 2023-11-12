@@ -1,5 +1,6 @@
 import { ACL } from "../src/ACL";
-import { GenericUser, SimpleDescriptorEnum } from "../src/Types";
+import { GenericUser, SDE, SimpleDescriptorEnum } from "../src/Types";
+import { getValueByPath } from "../src/utils";
 
 const user: GenericUser = { roles: [] };
 
@@ -374,7 +375,7 @@ describe("ACL.apply() additional tests", () => {
     expect(applied).toStrictEqual(data);
   });
 
-  it.only("should effectively handle overlapping roles with different access levels", () => {
+  it("should effectively handle overlapping roles with different access levels", () => {
     const user = {
       roles: ["readOnlyUser", "writeOnlyUser", "readWriteUser", "neverUser"],
     };
@@ -420,25 +421,107 @@ describe("ACL.apply() additional tests", () => {
     }
   });
 
-  it.todo(
-    "should preserve the integrity of nested objects after applying descriptors"
-  );
-  it.todo(
-    "should properly handle array elements with specific role-based access"
-  );
-  it.todo("should validate the behavior when no roles are assigned to a user");
-  it.todo(
-    "should ensure that fields with 'readWrite' descriptors are both readable and writable"
-  );
-  it.todo(
-    "should test the removal of fields based on user roles in a complex object hierarchy"
-  );
-  it.todo(
-    "should verify the behavior when conflicting descriptors are applied to the same path"
-  );
-  it.todo(
-    "should assess the performance of ACL.apply() on large and deeply nested objects"
-  );
+  it("should handle nested wildcards in ACL paths correctly", () => {
+    const acl = ACL.FromJson({
+      "config.*.settings.*.properties.*.cookie": SDE.r,
+    });
 
-  it.todo("should return a decoupled clone of the source object.");
+    const data = {
+      config: {
+        any: { settings: { any: { properties: { any: { cookie: 3 } } } } },
+        anyOther: {
+          settings2: { any: { properties: { any: { cookie: 3 } } } },
+        },
+      },
+    };
+
+    const [applied, removals] = acl.read(data, user);
+
+    expect(removals).toContain(
+      "config.anyOther.settings2.any.properties.any.cookie"
+    );
+    // This path should not exist.
+    expect(
+      getValueByPath(
+        applied,
+        "config.anyOther.settings2.any.properties.any.cookie"
+      )
+    ).toBeUndefined();
+    expect(
+      getValueByPath(applied, "config.any.settings.any.properties.any.cookie")
+    ).toBe(3);
+  });
+
+  // it("should correctly apply write-only descriptors to specified fields", () => {
+  //   // Implement test logic here
+  //   // Expectations:
+  //   // Fields with write-only descriptors should be writable but not readable.
+  //   // Attempting to read these fields should result in them being excluded or undefined in the output.
+  //   expect(/* condition for write-only fields being unwritable */).toBeTruthy();
+  //   expect(/* condition for write-only fields being unreadable */).toBeFalsy();
+  // });
+
+  // it("should effectively handle overlapping roles with different access levels", () => {
+  //   // Implement test logic here
+  //   // Expectations:
+  //   // Users with multiple roles should get an access level that correctly reflects all their roles.
+  //   // In case of conflicting access levels, the most permissive or specific one should take precedence, as per your ACL logic.
+  //   expect(/* condition for overlapping roles being handled effectively */).toBeTruthy();
+  // });
+
+  // it("should preserve the integrity of nested objects after applying descriptors", () => {
+  //   // Implement test logic here
+  //   // Expectations:
+  //   // Nested objects should retain their structure and other properties not affected by ACL.
+  //   // Only the fields specified by the descriptors should be altered or removed.
+  //   expect(/* condition for integrity of nested objects */).toBeTruthy();
+  // });
+
+  // it("should properly handle array elements with specific role-based access", () => {
+  //   // Implement test logic here
+  //   // Expectations:
+  //   // Array elements should be individually processed based on ACL rules.
+  //   // Users with specific roles should have the appropriate access to each element as defined by ACL.
+  //   expect(/* condition for proper handling of array elements */).toBeTruthy();
+  // });
+
+  // it("should validate the behavior when no roles are assigned to a user", () => {
+  //   // Implement test logic here
+  //   // Expectations:
+  //   // Users without any roles should have access defined by default or 'none' roles in ACL.
+  //   // The behavior should be consistent and predictable for users without roles.
+  //   expect(/* condition for behavior with no assigned roles */).toBeTruthy();
+  // });
+
+  // it("should ensure that fields with 'readWrite' descriptors are both readable and writable", () => {
+  //   // Implement test logic here
+  //   // Expectations:
+  //   // Fields with 'readWrite' descriptors should be accessible for both reading and writing operations.
+  //   // No restrictions should be applied to these fields for users with appropriate roles.
+  //   expect(/* condition for readWrite fields being accessible */).toBeTruthy();
+  // });
+
+  // it("should test the removal of fields based on user roles in a complex object hierarchy", () => {
+  //   // Implement test logic here
+  //   // Expectations:
+  //   // The ACL should correctly remove fields at various nesting levels based on user roles.
+  //   // The final object should only contain fields that the user's roles allow them to access.
+  //   expect(/* condition for correct field removal based on roles */).toBeTruthy();
+  // });
+
+  // it("should verify the behavior when conflicting descriptors are applied to the same path", () => {
+  //   // Implement test logic here
+  //   // Expectations:
+  //   // The ACL should have a defined way of resolving conflicts when multiple descriptors apply to the same path.
+  //   // The test should verify that the conflict resolution mechanism works as intended.
+  //   expect(/* condition for resolving conflicts between descriptors */).toBeTruthy();
+  // });
+
+  // it("should assess the performance of ACL.apply() on large and deeply nested objects", () => {
+  //   // Implement test logic here
+  //   // Expectations:
+  //   // The ACL should handle large and deeply nested objects within reasonable time and resource constraints.
+  //   // The test should check for any performance bottlenecks or issues when processing complex objects.
+  //   expect(/* condition for performance assessment */).toBeTruthy();
+  // });
 });

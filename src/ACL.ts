@@ -371,7 +371,7 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
   }
 
   public static FromJson<
-    Data extends {} = {},
+    Data extends {} = any,
     User extends GenericUser = GenericUser
   >(json: AclJson, strict = true) {
     return new ACL<Data, User>(json, strict);

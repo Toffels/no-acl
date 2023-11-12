@@ -16,6 +16,8 @@ export enum SimpleDescriptorEnum {
   readWrite = rw,
 }
 
+export const SDE = SimpleDescriptorEnum;
+
 export type Role = RegExp | string;
 
 export type VariableDescriptorKey = `@${string}`;
