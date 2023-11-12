@@ -1,6 +1,6 @@
-import { ACL } from "../src/ACL";
-import { ArrayDescriptor, SimpleDescriptorEnum } from "../src/Types";
-import { getWildCardPaths } from "../src/getWildCardPaths";
+import { ACL } from "../../src/ACL";
+import { ArrayDescriptor, SimpleDescriptorEnum } from "../../src/Types";
+import { getWildCardPaths } from "../../src/getWildCardPaths";
 
 describe("ACL.getDescriptor()", () => {
   const acl = ACL.FromJson({

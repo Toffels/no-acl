@@ -1,5 +1,5 @@
-import { ACL } from "../src/ACL";
-import { ArrayDescriptor, SimpleDescriptorEnum } from "../src/Types";
+import { ACL } from "../../src/ACL";
+import { ArrayDescriptor, SimpleDescriptorEnum } from "../../src/Types";
 
 describe("ACL.evalDescriptor()", () => {
   const user = { roles: ["test-role"] };

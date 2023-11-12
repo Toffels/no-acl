@@ -1,6 +1,6 @@
-import { ACL } from "../src/ACL";
-import { GenericUser, SDE, SimpleDescriptorEnum } from "../src/Types";
-import { getValueByPath } from "../src/utils";
+import { ACL } from "../../src/ACL";
+import { GenericUser, SDE, SimpleDescriptorEnum } from "../../src/Types";
+import { getValueByPath } from "../../src/utils";
 
 const user: GenericUser = { roles: [] };
 
