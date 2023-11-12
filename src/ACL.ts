@@ -9,6 +9,7 @@ import {
   Descriptor,
   GenericUser,
   SimpleDescriptorEnum,
+  SDE,
   SpecialDescriptor,
   VariableDescriptorKey,
 } from "./Types";
@@ -91,16 +92,25 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
   }
 
   static readonly #DefaultVars = {
-    "@n": SimpleDescriptorEnum.n,
-    "@none": SimpleDescriptorEnum.none,
-    "@null": SimpleDescriptorEnum.null,
-    "@never": SimpleDescriptorEnum.never,
-    "@r": SimpleDescriptorEnum.r,
-    "@read": SimpleDescriptorEnum.read,
-    "@w": SimpleDescriptorEnum.w,
-    "@write": SimpleDescriptorEnum.write,
-    "@rw": SimpleDescriptorEnum.rw,
-    "@readWrite": SimpleDescriptorEnum.readWrite,
+    "@n": SDE.n,
+    "@none": SDE.none,
+    "@null": SDE.null,
+
+    "@never": SDE.never,
+
+    "@r": SDE.r,
+    "@read": SDE.read,
+    "@w": SDE.w,
+    "@write": SDE.write,
+    "@rw": SDE.rw,
+    "@readWrite": SDE.readWrite,
+
+    "@c": SDE.c,
+    "@create": SDE.c,
+    "@u": SDE.u,
+    "@update": SDE.update,
+    "@d": SDE.d,
+    "@delete": SDE.delete,
   };
 
   protected constructor(aclJson: AclJson, private strict = true) {
@@ -152,11 +162,28 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
     return this.apply(data, user, SimpleDescriptorEnum.write);
   }
 
+  public create(data: Data, user: User) {
+    return this.apply(data, user, SimpleDescriptorEnum.create);
+  }
+
+  public update(data: Data, user: User) {
+    return this.apply(data, user, SimpleDescriptorEnum.update);
+  }
+
+  public delete(data: Data, user: User) {
+    return this.apply(data, user, SimpleDescriptorEnum.delete);
+  }
+
   private apply(
     data: Data,
     user: User,
     /** filters the data by either read, write or readWrite access. */
-    type: SimpleDescriptorEnum.read | SimpleDescriptorEnum.write
+    type:
+      | SimpleDescriptorEnum.read
+      | SimpleDescriptorEnum.write
+      | SimpleDescriptorEnum.create
+      | SimpleDescriptorEnum.update
+      | SimpleDescriptorEnum.delete
   ) {
     // Validate data input.
     this.validate(data);
@@ -299,7 +326,12 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
     descriptor: Descriptor | undefined,
     user: User,
     /** filters the data by either read, write or readWrite access. */
-    type: SimpleDescriptorEnum.read | SimpleDescriptorEnum.write
+    type:
+      | SimpleDescriptorEnum.read
+      | SimpleDescriptorEnum.write
+      | SimpleDescriptorEnum.create
+      | SimpleDescriptorEnum.update
+      | SimpleDescriptorEnum.delete
   ): [descriptor: SimpleDescriptorEnum, roles?: string[]] {
     if (descriptor === undefined) {
       // Falls back to No.

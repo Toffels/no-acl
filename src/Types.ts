@@ -14,6 +14,15 @@ export enum SimpleDescriptorEnum {
 
   rw = "rw",
   readWrite = rw,
+
+  c = "c",
+  create = c,
+
+  u = "u",
+  update = u,
+
+  d = "d",
+  delete = d,
 }
 
 export const SDE = SimpleDescriptorEnum;
@@ -28,7 +37,10 @@ export type SimpleDescriptor =
   | SimpleDescriptorEnum.none
   | SimpleDescriptorEnum.read
   | SimpleDescriptorEnum.write
-  | SimpleDescriptorEnum.readWrite;
+  | SimpleDescriptorEnum.readWrite
+  | SimpleDescriptorEnum.create
+  | SimpleDescriptorEnum.update
+  | SimpleDescriptorEnum.delete;
 
 export type SpecialDescriptor = {
   d: SimpleDescriptor | NeverDescriptor;

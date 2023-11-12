@@ -129,3 +129,38 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE.txt) 
 
 ## Support
 This ACL Toolkit is currently under active development. While we strive to ensure stability and usability, please be aware that we cannot guarantee full functionality at this stage. Your feedback and contributions are highly valued and play a crucial role in improving this toolkit. However, please note that direct support and troubleshooting assistance may be limited at this time. For any feedback, suggestions, or potential issues, kindly open an issue in the GitHub repository.
+
+
+# Does it need another one?
+Probably not, but I had this idea in mind, before researching and thought it would be an interesting tech challenge to my self.
+I ended up using it in my projects at Arcware and wanted to re-write it in a more generic way.
+Also I added a bunch of features and rethought some concepts.
+
+## Alternatives:
+Please consider these alternatives:
+
+#### Casbin
+Description: An authorization library that supports various access control models like ACL, RBAC, ABAC.
+Languages: Available in multiple languages, including a JavaScript version.
+Features: It is very flexible and supports complex access control scenarios.
+Website: [Casbin](https://casbin.org/)
+
+#### AccessControl
+Description: A role and attribute-based access control library for Node.js.
+Features: It offers a fluent API to define roles, resources, and permissions.
+NPM Page: [AccessControl](https://www.npmjs.com/package/accesscontrol)
+
+#### node_acl
+Description: A simple ACL for Node.js, supports various backends like memory, Redis, and MongoDB.
+Features: Provides straightforward methods to define roles and permissions.
+NPM Page: [node_acl](https://www.npmjs.com/package/acl)
+
+#### RBAC
+Description: A minimalistic RBAC (Role Based Access Control) implementation in Node.js.
+Features: Simplistic and lightweight, suitable for small to medium projects.
+NPM Page: [RBAC](https://www.npmjs.com/package/rbac)
+
+#### Permit
+Description: An authorization library for building secure and scalable user permissions systems.
+Features: Offers a clean and promise-based API.
+NPM Page: [Permit](https://www.npmjs.com/package/permit)
