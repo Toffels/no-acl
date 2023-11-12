@@ -2,6 +2,7 @@ import { ACL } from "../../src/ACL";
 import { SimpleDescriptorEnum } from "../../src/Types";
 
 const TIME_THRESHOLD = 2;
+const NUMBER_OF_RUNS = 1000;
 
 describe("ACL.apply() benchmarking", () => {
   let logs: string[] = [];
@@ -150,19 +151,18 @@ describe("ACL.apply() benchmarking", () => {
 
   dataSets.forEach(([title, acl, data, user], index) => {
     it(`should benchmark '${title}'`, async () => {
-      const numberOfRuns = 100;
       let totalTimeTaken = 0;
 
-      for (let i = 0; i < numberOfRuns; i++) {
+      for (let i = 0; i < NUMBER_OF_RUNS; i++) {
         const startTime = performance.now();
 
-        await acl.read(data, user);
+        acl.read(data, user);
 
         const endTime = performance.now();
         totalTimeTaken += endTime - startTime;
       }
 
-      const averageTimeTaken = totalTimeTaken / numberOfRuns;
+      const averageTimeTaken = totalTimeTaken / NUMBER_OF_RUNS;
       logs.push(
         `'${title}' average: ${averageTimeTaken.toFixed(3)} milliseconds`
       );
@@ -171,6 +171,7 @@ describe("ACL.apply() benchmarking", () => {
       // While this is relative to the performance of the system running it.
       expect(averageTimeTaken).toBeLessThan(TIME_THRESHOLD);
 
+      // logging
       if (index === dataSets.length - 1) {
         flushed = true;
       }
