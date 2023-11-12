@@ -238,15 +238,188 @@ describe("ACL.apply() additional tests", () => {
     expect(removals).not.toContain("unknownField");
   });
 
-  it.todo("should correctly apply descriptors to array elements");
-  it.todo(
-    "should resolve conflicts between multiple descriptors for the same path"
-  );
-  it.todo("should handle nested wildcards in ACL paths correctly");
-  it.todo("should correctly apply write-only descriptors to specified fields");
-  it.todo(
-    "should effectively handle overlapping roles with different access levels"
-  );
+  it("should correctly apply descriptors to array elements", () => {
+    const user = { roles: ["readOnlyUser"] };
+    const acl = ACL.FromJson({
+      config: [{ d: SimpleDescriptorEnum.read, roles: ["readOnlyUser"] }],
+      "config.0.canWrite": [
+        { d: SimpleDescriptorEnum.never, roles: ["readOnlyUser"] },
+      ],
+    });
+
+    const data = { config: [{ canWrite: 1, canRead: 1 }] };
+    const [applied, removals] = acl.read(data, user);
+    expect(removals).toContain("config.0.canWrite");
+    expect(applied).toStrictEqual({ config: [{ canRead: 1 }] });
+  });
+
+  it("should correctly apply descriptors to array elements if wildcard was used", () => {
+    const user = { roles: ["readOnlyUser"] };
+    const acl = ACL.FromJson<{
+      config: { canRead: number; canWrite: number }[];
+    }>({
+      config: [{ d: SimpleDescriptorEnum.read, roles: ["readOnlyUser"] }],
+      "config.*.canWrite": [
+        { d: SimpleDescriptorEnum.never, roles: ["readOnlyUser"] },
+      ],
+    });
+
+    const data = { config: [{ canWrite: 1, canRead: 1 }] };
+    const [applied, removals] = acl.read(data, user);
+    expect(removals).toContain("config.0.canWrite");
+    expect(applied.config?.[0]?.canRead).toBe(1);
+    expect(applied.config?.[0]?.canWrite).toBeUndefined();
+    expect(applied).toStrictEqual({ config: [{ canRead: 1 }] });
+  });
+
+  it("should resolve conflicts between multiple descriptors for the same path", () => {
+    const user = { roles: ["canWrite", "readOnlyUser"] };
+    const acl = ACL.FromJson<{
+      config: { canRead: number; canWrite: number };
+    }>({
+      config: [
+        { d: SimpleDescriptorEnum.read, roles: ["readOnlyUser"] },
+        { d: SimpleDescriptorEnum.write, roles: ["canWrite"] },
+      ],
+      "config.*": [{ d: SimpleDescriptorEnum.none, roles: ["readOnlyUser"] }],
+      "config.canRead": [
+        { d: SimpleDescriptorEnum.read, roles: ["readOnlyUser"] },
+      ],
+      "config.canWrite": [
+        { d: SimpleDescriptorEnum.write, roles: ["canWrite"] },
+      ],
+    });
+
+    {
+      const data = { config: { canWrite: 1, canRead: 1 } };
+      const [applied, removals] = acl.read(data, user);
+      // Requesting read, the write key should be removed.
+      expect(removals).toStrictEqual(["config.canWrite"]);
+      expect(applied.config?.hasOwnProperty("canRead")).toBe(true);
+      expect(applied.config?.hasOwnProperty("canWrite")).toBe(false);
+    }
+
+    {
+      const data = { config: { canWrite: 1, canRead: 1 } };
+      const [applied, removals] = acl.write(data, user);
+      // Requesting read, the write key should be removed.
+      expect(removals).toStrictEqual(["config.canRead"]);
+      expect(applied.config?.hasOwnProperty("canRead")).toBe(false);
+      expect(applied.config?.hasOwnProperty("canWrite")).toBe(true);
+    }
+  });
+
+  it("should handle nested wildcards in ACL paths correctly", () => {
+    const user = { roles: ["readOnlyUser"] };
+    type T = {
+      config: {
+        deep: { deeper: { propertyA: 1; propertyB: 1; propertyC: 1 } };
+      };
+    };
+    const acl = ACL.FromJson<T>({
+      config: { d: SimpleDescriptorEnum.read, roles: ["readOnlyUser"] },
+      "config.*.*.propertyA": {
+        d: SimpleDescriptorEnum.none,
+        roles: ["readOnlyUser"],
+      },
+      "config.*.*.propertyB": {
+        d: SimpleDescriptorEnum.read,
+        roles: ["readOnlyUser"],
+      },
+      "config.deep.deeper.*": {
+        d: SimpleDescriptorEnum.write,
+        roles: ["readOnlyUser"],
+      },
+    });
+
+    const data: T = {
+      config: {
+        deep: { deeper: { propertyA: 1, propertyB: 1, propertyC: 1 } },
+      },
+    };
+    const [applied, removals] = acl.read(data, user);
+    expect(removals).toStrictEqual([
+      "config.deep.deeper.propertyA",
+      "config.deep.deeper.propertyC",
+    ]);
+    expect(applied).toStrictEqual({
+      config: {
+        deep: {
+          deeper: {
+            propertyB: 1,
+          },
+        },
+      },
+    });
+  });
+
+  it("should evaluate the implicit inheritance", () => {
+    const user = { roles: ["readOnlyUser"] };
+    type T = {
+      config: {
+        deep: { deeper: { propertyA: 1; propertyB: 1; propertyC: 1 } };
+      };
+    };
+    const acl = ACL.FromJson<T>({
+      config: { d: SimpleDescriptorEnum.read, roles: ["readOnlyUser"] },
+    });
+
+    const data: T = {
+      config: {
+        deep: { deeper: { propertyA: 1, propertyB: 1, propertyC: 1 } },
+      },
+    };
+    const [applied, removals] = acl.read(data, user);
+    expect(removals).toStrictEqual([]);
+    expect(applied).toStrictEqual(data);
+  });
+
+  it.only("should effectively handle overlapping roles with different access levels", () => {
+    const user = {
+      roles: ["readOnlyUser", "writeOnlyUser", "readWriteUser", "neverUser"],
+    };
+    type T = {
+      config: "config";
+      config2: "config2";
+    };
+    const acl = ACL.FromJson<T>({
+      config: [
+        { d: SimpleDescriptorEnum.read, roles: ["readOnlyUser"] },
+        { d: SimpleDescriptorEnum.write, roles: ["writeOnlyUser"] },
+        { d: SimpleDescriptorEnum.readWrite, roles: ["readWriteUser"] },
+      ],
+      config2: [
+        { d: SimpleDescriptorEnum.never, roles: ["neverUser"] },
+        { d: SimpleDescriptorEnum.write, roles: ["writeOnlyUser"] },
+        { d: SimpleDescriptorEnum.readWrite, roles: ["readWriteUser"] },
+      ],
+    });
+
+    {
+      const data: T = {
+        config: "config",
+        config2: "config2",
+      };
+      const copy = { ...data };
+      const [applied, removals] = acl.read(data, user);
+      expect(removals).toStrictEqual(["config2"]);
+      expect(applied).not.toStrictEqual(copy);
+      expect(applied).toStrictEqual({ config: "config" });
+    }
+
+    {
+      const data: T = {
+        config: "config",
+        config2: "config2",
+      };
+      const copy = { ...data };
+      const [applied, removals] = acl.write(data, user);
+      expect(removals).toStrictEqual(["config2"]);
+      expect(applied).not.toStrictEqual(copy);
+      expect(applied).toStrictEqual({ config: "config" });
+    }
+  });
+
   it.todo(
     "should preserve the integrity of nested objects after applying descriptors"
   );
@@ -266,4 +439,6 @@ describe("ACL.apply() additional tests", () => {
   it.todo(
     "should assess the performance of ACL.apply() on large and deeply nested objects"
   );
+
+  it.todo("should return a decoupled clone of the source object.");
 });

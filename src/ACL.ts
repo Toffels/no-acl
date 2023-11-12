@@ -188,7 +188,9 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
         if (matchingKeyInRemovals) {
           if (this.debug)
             logs.push(
-              `  Skip: '${key}' matches already removed key: '${matchingKeyInRemovals}'`
+              `  Skip: '${key}'${
+                match[key] ? ` ('${match[key]}')` : ""
+              } matches already removed key: '${matchingKeyInRemovals}'`
             );
 
           continue;
@@ -205,11 +207,15 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
         const matchTheType =
           type === descriptor || descriptor === SimpleDescriptorEnum.readWrite;
 
+        const hasWildcard = key.includes("*");
+
         // If not, add key to removals.
-        if (!matchTheType) {
+        if (!matchTheType && !hasWildcard) {
           if (this.debug)
             logs.push(
-              `Remove: '${key}' based on descriptor: '${descriptor}' and roles: ${roles}`
+              `Remove: '${key}'${
+                match[key] ? ` ('${match[key]}')` : ""
+              } based on descriptor: '${descriptor}' and roles: ${roles}`
             );
           removals.push(key);
         }
@@ -290,10 +296,18 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
   ): [descriptor: SimpleDescriptorEnum, roles?: string[]] {
     if (descriptor === undefined) {
       // Falls back to No.
-      if (this.strict) return [SimpleDescriptorEnum.none];
+      if (this.strict) {
+        if (this.debug)
+          console.log(
+            "evalDescriptor() [strict] descriptor was undefined, returning none."
+          );
+        return [SimpleDescriptorEnum.none];
+      }
       // Falls back to YES.
       return [SimpleDescriptorEnum.readWrite];
     }
+
+    let roles: string[] | undefined;
 
     // SimpleDescriptor or VariableDescriptor
     if (typeof descriptor === "string") {
@@ -323,6 +337,7 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
 
         // If it hits a SimpleDescriptor that matches, it's fine - take it.
         if (!r && matchTheType) return [d];
+        else roles = r;
         // If there is matching roles and it's not a none-descriptor return first match.
         if (
           ((r?.length ?? 0) > 0 && matchTheType) ||
@@ -338,7 +353,13 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
     }
 
     // Falls back to No.
-    if (this.strict) return [SimpleDescriptorEnum.none];
+    if (this.strict) {
+      if (this.debug && !roles)
+        console.log(
+          `evalDescriptor() [strict] couldn't be evaluated, returning none.`
+        );
+      return [SimpleDescriptorEnum.none, roles];
+    }
     // Falls back to YES.
     return [SimpleDescriptorEnum.readWrite];
   }
