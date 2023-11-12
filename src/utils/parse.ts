@@ -26,6 +26,9 @@ export function assureDescriptor(descriptor: Descriptor): Descriptor {
         SimpleDescriptorEnum.readWrite,
         SimpleDescriptorEnum.read,
         SimpleDescriptorEnum.write,
+        SimpleDescriptorEnum.create,
+        SimpleDescriptorEnum.update,
+        SimpleDescriptorEnum.delete,
       ]).has(des as SimpleDescriptorEnum)
     )
       throw new Error(`Invalid descriptor '${descriptor}'.`);

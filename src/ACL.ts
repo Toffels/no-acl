@@ -13,7 +13,7 @@ import {
   SpecialDescriptor,
   VariableDescriptorKey,
 } from "./Types";
-import { DeepPartial } from "./utils/DeepPartial";
+import { DeepPartialNullable, DeepPartial } from "./utils/DeepPartial";
 import { serializeDescriptor } from "./utils/serialize";
 import { assureDescriptor } from "./utils/parse";
 import { z } from "zod";
@@ -114,6 +114,10 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
   };
 
   protected constructor(aclJson: AclJson, private strict = true) {
+    if (!strict) {
+      console.warn(`Strict-Mode is not entirely tested.`);
+    }
+
     this.#aclJson = aclJson;
     this.#acl = {};
     this.#vars = {
@@ -262,7 +266,7 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
     }
 
     return [removeEmptyObjects(copy), removals] as [
-      data: DeepPartial<Data>,
+      data: DeepPartialNullable<Data>,
       removals: string[]
     ];
   }
