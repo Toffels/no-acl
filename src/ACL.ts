@@ -336,14 +336,19 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
         const matchTheType = type === d || d === SimpleDescriptorEnum.readWrite;
 
         // If it hits a SimpleDescriptor that matches, it's fine - take it.
-        if (!r && matchTheType) return [d];
-        else roles = r;
+        if (!r && matchTheType) {
+          return [d];
+        } else {
+          roles = r;
+        }
+
         // If there is matching roles and it's not a none-descriptor return first match.
         if (
           ((r?.length ?? 0) > 0 && matchTheType) ||
           d === SimpleDescriptorEnum.readWrite
-        )
+        ) {
           return [d, r];
+        }
       }
 
       // SpecialDescriptor
