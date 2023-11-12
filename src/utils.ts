@@ -54,7 +54,7 @@ export function flatten<Obj extends GenericObject>(
  * @param obj - The input to check.
  * @returns True if the input is an object, false otherwise.
  */
-function isObj(obj: any): boolean {
+export function isObj(obj: any): boolean {
   return !!obj && typeof obj === "object";
 }
 
