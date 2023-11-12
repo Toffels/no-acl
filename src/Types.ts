@@ -71,3 +71,13 @@ export type Acl = {
 };
 
 export type GenericUser = { roles: string[] };
+
+export type Rebuild<T> = T extends (infer R)[]
+  ? Rebuild<R>[]
+  : T extends (...args: any[]) => any
+  ? T
+  : T extends object
+  ? {
+      [K in keyof T]: Rebuild<T[K]>;
+    }
+  : T;
