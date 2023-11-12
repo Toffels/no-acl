@@ -1,5 +1,5 @@
 import { serializeRegex } from "./utils";
-import { ArrayDescriptor, Descriptor } from "./Types";
+import { ArrayDescriptor, Descriptor } from "../Types";
 
 export function serializeDescriptor(descriptor: Descriptor): Descriptor {
   if (typeof descriptor === "object") {

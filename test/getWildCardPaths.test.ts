@@ -1,4 +1,4 @@
-import { getWildCardPaths } from "../src/getWildCardPaths";
+import { getWildCardPaths } from "../src/utils/getWildCardPaths";
 
 describe("getWildCardPaths", () => {
   const keys = [

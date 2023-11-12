@@ -5,7 +5,7 @@ import {
   SimpleDescriptorEnum,
   SpecialDescriptor,
   VariableDescriptorKey,
-} from "./Types";
+} from "../Types";
 
 export function assureDescriptor(descriptor: Descriptor): Descriptor {
   if (Array.isArray(descriptor)) {

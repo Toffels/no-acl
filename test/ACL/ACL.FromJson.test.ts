@@ -1,6 +1,6 @@
 import { ACL } from "../../src/ACL";
 import { SimpleDescriptorEnum, SpecialDescriptor } from "../../src/Types";
-import { getValueByPath } from "../../src/utils";
+import { getValueByPath } from "../../src/utils/utils";
 
 describe("ACL.FromJson()", () => {
   const acl = ACL.FromJson({

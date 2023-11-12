@@ -1,4 +1,4 @@
-import { flatten } from "../src/utils";
+import { flatten } from "../src/utils/utils";
 
 describe("flatten", () => {
   it("should flatten an object with nested objects", () => {

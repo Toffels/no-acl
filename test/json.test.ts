@@ -1,4 +1,4 @@
-import { setValueByPath, getValueByPath } from "../src/utils";
+import { setValueByPath, getValueByPath } from "../src/utils/utils";
 
 describe("setValueByPath", () => {
   it("should throw on invalid data input", () => {

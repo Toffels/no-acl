@@ -1,7 +1,7 @@
 import { InvalidInput } from "./errors/InvalidInput";
 import { NotImplemented } from "./errors/NotImplemented";
 import { VariableUndefined } from "./errors/VariableUndefined";
-import { flatten, setValueByPath } from "./utils";
+import { flatten, setValueByPath } from "./utils/utils";
 import {
   Acl,
   AclJson,
@@ -12,12 +12,12 @@ import {
   SpecialDescriptor,
   VariableDescriptorKey,
 } from "./Types";
-import { DeepPartial } from "./DeepPartial";
-import { serializeDescriptor } from "./serialize";
-import { assureDescriptor } from "./parse";
+import { DeepPartial } from "./utils/DeepPartial";
+import { serializeDescriptor } from "./utils/serialize";
+import { assureDescriptor } from "./utils/parse";
 import { z } from "zod";
 import { FromZod } from "./FromZod";
-import { getWildCardPaths } from "./getWildCardPaths";
+import { getWildCardPaths } from "./utils/getWildCardPaths";
 
 function getParentPath(path: string) {
   const segments = path.split(".");

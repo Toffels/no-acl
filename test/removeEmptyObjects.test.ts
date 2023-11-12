@@ -1,4 +1,4 @@
-import { removeEmptyObjects } from "../src/removeEmptyObjects";
+import { removeEmptyObjects } from "../src/utils/removeEmptyObjects";
 
 describe("removeEmptyObjects", () => {
   it("should remove an empty object from a simple object", () => {
