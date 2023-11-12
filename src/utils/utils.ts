@@ -123,7 +123,7 @@ export function setValueByPath<Input = unknown>(
           current
         )}' instead of 'object'.`
       );
-    } else if (!(key in current)) {
+    } else if (!(key in current) && value !== undefined) {
       // Create a new object or array at the current key based on the next key.
       if (keys[index + 1] && !isNaN(Number(keys[index + 1]))) {
         current[key] = [];

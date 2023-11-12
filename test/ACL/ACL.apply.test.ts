@@ -43,13 +43,11 @@ describe("ACL.apply() strict", () => {
         "dropped",
       ].sort()
     );
-    expect(applied.hasOwnProperty("example")).toBe(true);
+    expect(applied.hasOwnProperty("example")).toBe(false);
     expect(applied.hasOwnProperty("dropped")).toBe(false);
     expect(applied.hasOwnProperty("dropped_deep")).toBe(false);
     expect(applied.hasOwnProperty("unset")).toBe(false);
-    expect(applied.example!.hasOwnProperty("dropped")).toBe(false);
-
-    // It's expected to keep this field, since it's explicitly set to readWrite
+    expect(!!applied.example?.hasOwnProperty("dropped")).toBe(false);
     expect(removals).not.toContain("example");
   });
 
@@ -170,7 +168,7 @@ describe("ACL.apply() additional tests", () => {
 
     const [applied, removals] = acl.read(data, user);
     expect(applied.example?.hasOwnProperty("allowed")).toBe(true);
-    expect(applied.example?.dropped).toStrictEqual({});
+    expect(applied.example?.dropped).toBeUndefined();
     expect(removals).toContain("example.dropped.sensitive");
   });
 
@@ -450,6 +448,51 @@ describe("ACL.apply() additional tests", () => {
     expect(
       getValueByPath(applied, "config.any.settings.any.properties.any.cookie")
     ).toBe(3);
+  });
+
+  it("should make a copy of the input data", () => {
+    const acl = ACL.FromJson({
+      config: SDE.r,
+    });
+
+    const data = { config: "config" };
+    expect(acl.read(data, { roles: [] })[0]).not.toBe(data);
+    expect(acl.read(data, { roles: [] })[0] === data).toBe(false);
+  });
+
+  it("should clean up empty objects", () => {
+    const acl = ACL.FromJson(
+      {
+        config: SDE.never,
+      },
+      false
+    );
+
+    const data = {
+      config: { b: { c: { d: "config" } } },
+      config2: { b: { c: { d: {} } } },
+    };
+    const [applied, removals] = acl.read(data, { roles: [] });
+    expect(applied).toStrictEqual({});
+  });
+
+  it("should clean up empty objects", () => {
+    const acl = ACL.FromJson(
+      {
+        "config.b.c.d": SDE.never,
+      },
+      false
+    );
+
+    const data = {
+      config: { b: { c: { d: "config" } } },
+      config2: { b: { c: { d: {} } } },
+      config3: { b: { c: { d: 1 } } },
+    };
+    const [applied, removals] = acl.read(data, { roles: [] });
+    expect(applied).toStrictEqual({
+      config3: { b: { c: { d: 1 } } },
+    });
   });
 
   // it("should correctly apply write-only descriptors to specified fields", () => {

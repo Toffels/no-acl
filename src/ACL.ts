@@ -1,7 +1,7 @@
 import { InvalidInput } from "./errors/InvalidInput";
 import { NotImplemented } from "./errors/NotImplemented";
 import { VariableUndefined } from "./errors/VariableUndefined";
-import { flatten, setValueByPath } from "./utils/utils";
+import { flatten, getValueByPath, setValueByPath } from "./utils/utils";
 import {
   Acl,
   AclJson,
@@ -18,6 +18,7 @@ import { assureDescriptor } from "./utils/parse";
 import { z } from "zod";
 import { FromZod } from "./FromZod";
 import { getWildCardPaths } from "./utils/getWildCardPaths";
+import { removeEmptyObjects } from "./utils/removeEmptyObjects";
 
 function getParentPath(path: string) {
   const segments = path.split(".");
@@ -160,8 +161,11 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
     // Validate data input.
     this.validate(data);
 
+    // Remove empty objects, but also already deeply copy the source.
+    const copy = removeEmptyObjects(data);
+
     // Flatten the data is an extra step, which will add cost on performance, but adds benefits for code readability and maintenance.
-    const flatData = flatten(data);
+    const flatData = flatten(copy);
     // Sorting the keys will help to add removals early and therefore it can be used to skip further processing.
     const flatDataKeys = Object.keys(flatData).sort();
 
@@ -227,10 +231,13 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
     }
 
     for (var removal of removals) {
-      setValueByPath(data, removal, undefined);
+      setValueByPath(copy, removal, undefined);
     }
 
-    return [data, removals] as [data: DeepPartial<Data>, removals: string[]];
+    return [removeEmptyObjects(copy), removals] as [
+      data: DeepPartial<Data>,
+      removals: string[]
+    ];
   }
 
   /** Gets the plain descriptor by path.
@@ -336,11 +343,8 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
         const matchTheType = type === d || d === SimpleDescriptorEnum.readWrite;
 
         // If it hits a SimpleDescriptor that matches, it's fine - take it.
-        if (!r && matchTheType) {
-          return [d];
-        } else {
-          roles = r;
-        }
+        if (!r && matchTheType) return [d];
+        else roles = r;
 
         // If there is matching roles and it's not a none-descriptor return first match.
         if (
