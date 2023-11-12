@@ -33,6 +33,8 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
   #vars: Acl;
   #aclJson: Acl;
 
+  private readonly keys: string[];
+
   public get acl() {
     return { ...this.#acl };
   }
@@ -131,6 +133,8 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
         this.#acl[key] = assureDescriptor(des);
       }
     });
+
+    this.keys = Object.keys(this.#acl).sort();
   }
 
   /** Aggregates roles from a User object. */
@@ -200,7 +204,7 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
     // Sorting the keys will help to add removals early and therefore it can be used to skip further processing.
     const flatDataKeys = Object.keys(flatData).sort();
 
-    const aclKeys = Object.keys(this.#acl).sort();
+    const aclKeys = this.keys;
 
     // Setup tracking of to be removed keys.
     const removals: string[] = [];

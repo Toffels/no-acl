@@ -164,3 +164,6 @@ NPM Page: [RBAC](https://www.npmjs.com/package/rbac)
 Description: An authorization library for building secure and scalable user permissions systems.
 Features: Offers a clean and promise-based API.
 NPM Page: [Permit](https://www.npmjs.com/package/permit)
+
+## TODOs
+Further features and plans to be found [here](TODO.md).
