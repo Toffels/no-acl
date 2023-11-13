@@ -1,7 +1,7 @@
 import { InvalidInput } from "./errors/InvalidInput";
 import { NotImplemented } from "./errors/NotImplemented";
 import { VariableUndefined } from "./errors/VariableUndefined";
-import { flatten, getValueByPath, setValueByPath } from "./utils/utils";
+import { flatten, setValueByPath } from "./utils/utils";
 import {
   Acl,
   AclJson,
@@ -16,8 +16,6 @@ import {
 import { DeepPartialNullable, DeepPartial } from "./utils/DeepPartial";
 import { serializeDescriptor } from "./utils/serialize";
 import { assureDescriptor } from "./utils/parse";
-import { z } from "zod";
-import { FromZod } from "./FromZod";
 import { getWildCardPaths } from "./utils/getWildCardPaths";
 import { removeEmptyObjects } from "./utils/removeEmptyObjects";
 
@@ -432,10 +430,5 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
     User extends GenericUser = GenericUser
   >(json: AclJson, strict = true) {
     return new ACL<Data, User>(json, strict);
-  }
-
-  public static FromZod(zod: z.AnyZodObject) {
-    const json = FromZod(zod);
-    return new ACL(json);
   }
 }
