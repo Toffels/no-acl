@@ -51,7 +51,15 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
       result.push(`${key}: ${value}`)
     );
 
-    return result.join("\n");
+    return result
+      .sort((a, b) => {
+        const _a = a.split(":").shift();
+        const _b = b.split(":").shift();
+        const ab = _a!.length - _b!.length;
+        if (ab !== 0) return ab;
+        return (_b as any) - (_a as any);
+      })
+      .join("\n");
   }
 
   public toJson(

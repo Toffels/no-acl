@@ -37,12 +37,28 @@
                         })
                     ),
                     tuple: za("@r", z.tuple([z.string(), z.number(), z.boolean()])),
-                    union: za("@r", z.union([z.string(), z.number(), z.boolean()])),
+                    union: za("@r", z.union([
+                        z.union([za("@rw", z.string()), z.number(), z.boolean()]), z.number(), z.boolean()])),
                     intersection: za(
+                        // used
                         "@r",
                         z.intersection(
-                            z.object({ shared: za("@r", z.string()) }),
-                            z.object({ unique: za("@r", z.number().optional()) })
+                            za(
+                                // ignored    
+                                "@rw", z.object({
+                                    shared: za(
+                                        // overwrittenString
+                                        "@r", z.string())
+                                })),
+                            za(// ignored
+                                "@n",
+                                z.object({
+                                    // used
+                                    shared: za("@n", z.string()),
+                                    // used
+                                    unique: za("@rw", z.number().optional()),
+                                })
+                            )
                         )
                     ),
                     enum: za("@r", z.enum(["Cat", "Dog", "Bird"])),
@@ -92,10 +108,12 @@
                         })
                     ),
                     // ... you can continue adding other complex structures as needed
-                })
+                }),
+                true
             );
             globalThis["myComplexSchema"] = myComplexSchema;
             console.log(myComplexSchema)
+            console.log(myComplexSchema.acl.toString())
         }
 
         setTimeout(Core, 100)

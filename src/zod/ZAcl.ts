@@ -67,8 +67,6 @@ function findShape<Z extends z.ZodType>(zod: Z) {
     return zod.unwrap();
   } else if (zod instanceof ZodEffects) {
     return zod._def.schema;
-  } else if (zod instanceof ZodUnion) {
-    return zod._def.options;
   } else if (zod instanceof ZodArray) {
     return zod._def.type;
   } else if (zod instanceof ZodDefault) {
@@ -81,7 +79,8 @@ function findShape<Z extends z.ZodType>(zod: Z) {
 function getDescriptor<Z extends z.ZodType, D extends Descriptor>(
   zod: Z,
   path = "",
-  deep = true
+  deep = true,
+  debug = false
 ) {
   const acl: Acl = {};
 
@@ -98,7 +97,7 @@ function getDescriptor<Z extends z.ZodType, D extends Descriptor>(
       Object.entries(shape).reduce((result, [key, value]) => {
         return {
           ...result,
-          ...getDescriptor(value as any, createPath(path, key)),
+          ...getDescriptor(value as any, createPath(path, key), deep, debug),
         };
       }, {})
     );
@@ -111,34 +110,24 @@ function getDescriptor<Z extends z.ZodType, D extends Descriptor>(
     const right = zod._def.right as ZodType & E;
     const options = [left, right] as [ZodType & E, ZodType & E];
 
-    const descriptors = options.map((o) =>
-      getDescriptor(o as any, path, false)
+    const optionDescriptors = options.map((o) =>
+      getDescriptor(o as any, path, deep, debug)
     );
-    const d0 = JSON.stringify(descriptors[0]);
 
-    if (
-      descriptors.length === 1 ||
-      (descriptors.length > 0 &&
-        // ToDo improve on this check -.-
-        descriptors.every((d) => d0 === JSON.stringify(d)))
-    ) {
-      Object.assign(
-        acl,
-        descriptors.find(Boolean),
-        ...options.map((o) => getDescriptor(o as any, path))
+    if (debug)
+      console.warn(
+        `Intersection descriptors will overwrite by order they are evaluated. [${optionDescriptors
+          .map(
+            (option) =>
+              `[${Object.keys(option)
+                .filter((key) => key !== path)
+                .join(", ")}]`
+          )
+          .join(", ")}]`
       );
-
-      return acl;
-    }
-
-    if (descriptors.length > 0) {
-      const error = new Error(
-        `Found multiple definitions for acl on ZodIntersection.\n${path} ${JSON.stringify(
-          descriptors
-        )}`
-      );
-      console.log(error);
-    }
+    const result = {};
+    Object.assign(result, ...optionDescriptors, acl);
+    return result;
   }
 
   if (zod instanceof ZodRecord) {
@@ -150,10 +139,31 @@ function getDescriptor<Z extends z.ZodType, D extends Descriptor>(
     const recordDefinition = zod._def as ZodRecordDef;
     const valueDefinition = getDescriptor(
       recordDefinition.valueType,
-      wildcardPath
+      wildcardPath,
+      deep,
+      debug
     );
 
     Object.assign(acl, valueDefinition);
+  }
+
+  if (zod instanceof ZodUnion) {
+    const optionDescriptors = Object.keys(zod._def.options).map((o) =>
+      getDescriptor(zod._def.options[o] as any, path, deep, debug)
+    );
+
+    if (debug)
+      console.warn(
+        `Union descriptors will overwrite by order they are evaluated. [${[
+          { [path]: acl[path] },
+          ...optionDescriptors,
+        ]
+          .map((option) => `[${Object.values(option).join(", ")}]`)
+          .join(", ")}]`
+      );
+    const result = {};
+    Object.assign(result, ...optionDescriptors, acl);
+    return result;
   }
 
   if ((zod?._def as ZodDefaultDef)?.innerType) {
@@ -184,11 +194,11 @@ type ZAclE<Data extends {}, User extends GenericUser = GenericUser> = {
 export function ZAcl<
   Z extends z.ZodType,
   User extends GenericUser = GenericUser
->(zod: Z) {
+>(zod: Z, debug = false) {
   // Todo: create json from zod tree
 
   // findDescriptors(zod);
-  const json = getDescriptor(zod);
+  const json = getDescriptor(zod, "", true, debug);
 
   const extension: ZAclE<z.infer<Z>, User> = {
     acl: ACL.FromJson(json),

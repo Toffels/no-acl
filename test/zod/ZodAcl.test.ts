@@ -42,7 +42,10 @@ describe("ZAcl", () => {
         })
       ),
       tuple: za("@r", z.tuple([z.string(), z.number(), z.boolean()])),
-      union: za("@r", z.union([z.string(), z.number(), z.boolean()])),
+      union: za(
+        "@r",
+        z.union([za("@rw", z.string()), z.number(), z.boolean()])
+      ),
       intersection: za(
         "@r",
         z.intersection(

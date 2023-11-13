@@ -47,8 +47,8 @@ describe("ACL.FromJson()", () => {
       const lines = toString.split("\n");
       expect(lines.length).toBeGreaterThan(0);
       expect(lines).toStrictEqual([
-        `@custom-variable: ${SimpleDescriptorEnum.rw}`,
         "example: @custom-variable",
+        `@custom-variable: ${SimpleDescriptorEnum.rw}`,
       ]);
     });
   });
