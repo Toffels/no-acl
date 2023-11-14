@@ -14,47 +14,15 @@ import {
   ZodType,
   ZodRecordDef,
   ZodFunction,
+  boolean,
 } from "zod";
 import { Acl, Descriptor, GenericUser } from "../Types";
-import { ACL } from "../ACL";
+import { ACL, Options } from "../ACL";
 import { isObj } from "../utils/utils";
 
 type E<D extends Descriptor = Descriptor> = {
   descriptor: D;
 };
-
-const fnsToExecute = ["shape", "unwrap"];
-
-function findDescriptors(
-  obj: any,
-  path = "",
-  paths: string[] = [],
-  checked = new Set<any>([])
-) {
-  const typed = obj as unknown as E;
-
-  if (checked.has(obj)) return;
-  checked.add(obj);
-
-  if (typed?.descriptor) {
-    paths.push(path);
-  }
-
-  if (obj) {
-    Object.entries(obj).forEach(([key, val]) => {
-      const keyIn = fnsToExecute.includes(key);
-      if (typeof val === "function" && !keyIn) return;
-
-      findDescriptors(
-        keyIn && typeof val === "function" ? val() : val,
-        `${path}.${key}`,
-        paths,
-        checked
-      );
-    });
-  }
-  if (path === "") console.log(paths.map((path) => `'${path}'`).join("\n"));
-}
 
 function createPath(path: string, key: string) {
   return `${path === "" ? "" : `${path}.`}${key}`;
@@ -194,15 +162,14 @@ type ZAclE<Data extends {}, User extends GenericUser = GenericUser> = {
 export function ZAcl<
   Z extends z.ZodType,
   User extends GenericUser = GenericUser
->(zod: Z, debug = false) {
-  // Todo: create json from zod tree
+>(...args: [Z, Options<User>?, boolean?]) {
+  const [zod, options, debug] = args;
 
   // findDescriptors(zod);
   const json = getDescriptor(zod, "", true, debug);
+  const acl = ACL.FromJson<z.infer<Z>, User>(json, options);
 
-  const extension: ZAclE<z.infer<Z>, User> = {
-    acl: ACL.FromJson(json),
-  };
+  const extension: ZAclE<z.infer<Z>, User> = { acl };
   Object.assign(zod, extension);
   return zod as Z & typeof extension;
 }

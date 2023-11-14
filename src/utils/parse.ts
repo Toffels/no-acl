@@ -43,12 +43,10 @@ export function assureDescriptor(descriptor: Descriptor): Descriptor {
     if (!des.roles || (Array.isArray(des.roles) && des.roles.length === 0))
       throw new Error(`Invalid descriptor '${descriptor}'.`);
 
-    if (Array.isArray(des.roles)) {
-      const roles = des.roles.map(parseRegexOrString);
-      des.roles = [roles.shift()!, ...roles];
-    } else {
-      des.roles = parseRegexOrString(des.roles);
-    }
+    if (!Array.isArray(des.roles))
+      throw new Error(`Descriptor property roles must be an array type.`);
+    const roles = des.roles.map(parseRegexOrString);
+    des.roles = [roles.shift()!, ...roles];
   }
 
   return descriptor;

@@ -12,8 +12,7 @@ describe("ACL.apply() strict", () => {
       dropped: SimpleDescriptorEnum.none,
       dropped_deep: SimpleDescriptorEnum.none,
       "dropped_deep.no_need_to_be_dropped": SimpleDescriptorEnum.rw,
-    },
-    true
+    }
   );
 
   beforeEach(() => {
@@ -93,16 +92,13 @@ describe("ACL.apply() strict", () => {
     const user = { roles: ["test", "not-allowed-to"] };
     const acl = ACL.FromJson<{
       value: string;
-    }>(
-      {
-        value: [
-          { d: SimpleDescriptorEnum.write, roles: ["test"] },
-          { d: SimpleDescriptorEnum.never, roles: ["test"] },
-          { d: SimpleDescriptorEnum.read, roles: ["not-allowed-to"] },
-        ],
-      },
-      true
-    );
+    }>({
+      value: [
+        { d: SimpleDescriptorEnum.write, roles: ["test"] },
+        { d: SimpleDescriptorEnum.never, roles: ["test"] },
+        { d: SimpleDescriptorEnum.read, roles: ["not-allowed-to"] },
+      ],
+    });
 
     {
       const [applied, removals] = acl.read({ value: "value" }, user);
@@ -127,7 +123,7 @@ describe("ACL.apply() not strict", () => {
       "example.dropped": SimpleDescriptorEnum.none,
       dropped: SimpleDescriptorEnum.none,
     },
-    false
+    { strict: false }
   );
 
   const data = {
@@ -229,7 +225,7 @@ describe("ACL.apply() additional tests", () => {
       {
         config: [{ d: SimpleDescriptorEnum.read, roles: ["readOnlyUser"] }],
       },
-      false
+      { strict: false }
     );
 
     const [applied, removals] = acl.read(data, user);
@@ -465,7 +461,7 @@ describe("ACL.apply() additional tests", () => {
       {
         config: SDE.never,
       },
-      false
+      { strict: false }
     );
 
     const data = {
@@ -481,7 +477,7 @@ describe("ACL.apply() additional tests", () => {
       {
         "config.b.c.d": SDE.never,
       },
-      false
+      { strict: false }
     );
 
     const data = {

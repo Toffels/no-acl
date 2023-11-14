@@ -44,12 +44,12 @@ export type SimpleDescriptor =
 
 export type SpecialDescriptor = {
   d: SimpleDescriptor | NeverDescriptor;
-  roles: Role | [Role, ...Role[]];
+  roles: [Role, ...Role[]];
 };
 
 export type ArrayDescriptor = [
-  SpecialDescriptor | SimpleDescriptor,
-  ...(SpecialDescriptor | SimpleDescriptor)[]
+  VariableDescriptorKey | SpecialDescriptor | SimpleDescriptor,
+  ...(VariableDescriptorKey | SpecialDescriptor | SimpleDescriptor)[]
 ];
 
 export type Descriptor =

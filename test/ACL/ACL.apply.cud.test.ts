@@ -2,7 +2,7 @@ import { ACL } from "../../src/ACL";
 import { GenericUser, SDE, SimpleDescriptorEnum } from "../../src/Types";
 import { getValueByPath } from "../../src/utils/utils";
 
-describe("ACL with new descriptor types", () => {
+describe("ACL with new descriptor types (create, update, delete)", () => {
   let user: GenericUser;
   let data: {
     resource: {
