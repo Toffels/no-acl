@@ -136,7 +136,7 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
   protected constructor(aclJson: AclJson, options?: Options<User>) {
     const { strict } = options ?? {};
     if (strict === false) {
-      console.warn(`Strict-Mode is not entirely tested.`);
+      // console.warn(`None-Strict-Mode is not entirely tested.`);
       this.strict = strict;
     }
 

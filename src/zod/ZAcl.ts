@@ -155,21 +155,17 @@ export function za<Z extends z.ZodType, D extends Descriptor>(des: D, zod: Z) {
   return zod as typeof extension & Z;
 }
 
-type ZAclE<Data extends {}, User extends GenericUser = GenericUser> = {
-  acl: ACL;
-};
-
-export function ZAcl<
-  Z extends z.ZodType,
-  User extends GenericUser = GenericUser
->(...args: [Z, Options<User>?, boolean?]) {
-  const [zod, options, debug] = args;
+export function ZAcl<Z extends z.ZodType, User extends GenericUser>(
+  zod: Z,
+  options?: Options<User>,
+  debug?: boolean
+): Z & { acl: ACL<z.infer<Z>, User> } {
+  // type InferUser = typeof options extends Options<infer U> ? U : User;
 
   // findDescriptors(zod);
   const json = getDescriptor(zod, "", true, debug);
   const acl = ACL.FromJson<z.infer<Z>, User>(json, options);
 
-  const extension: ZAclE<z.infer<Z>, User> = { acl };
-  Object.assign(zod, extension);
-  return zod as Z & typeof extension;
+  Object.assign(zod, { acl });
+  return zod as Z & { acl: ACL<z.infer<Z>, User> };
 }
