@@ -46,7 +46,7 @@ describe("ACL with new descriptor types (create, update, delete)", () => {
       ...data,
       resource: { ...data.resource, newContent: "New Content" },
     };
-    const [result, removals] = acl.create(newData, user);
+    const [result, removals] = acl.apply(newData, user, SDE.create, true);
     expect(result.resource?.newContent).toBe("New Content");
   });
 
@@ -55,7 +55,7 @@ describe("ACL with new descriptor types (create, update, delete)", () => {
       ...data,
       resource: { ...data.resource, updatedContent: "Updated Content" },
     };
-    const [result, removals] = acl.update(newData, user);
+    const [result, removals] = acl.apply(newData, user, SDE.update, true);
     expect(result.resource?.updatedContent).toBe("Updated Content");
   });
 
@@ -64,13 +64,13 @@ describe("ACL with new descriptor types (create, update, delete)", () => {
       ...data,
       resource: { ...data.resource, deletedContent: null },
     };
-    const [result, removals] = acl.delete(newData, user);
+    const [result, removals] = acl.apply(newData, user, SDE.delete, true);
     expect(result.resource?.deletedContent).toBeNull();
   });
 
   it("should not interfere with existing 'read' and 'write' descriptors", () => {
     // Test read
-    const [readResult] = acl.read(data, user);
+    const [readResult] = acl.apply(data, user, SDE.read, true);
     expect(readResult.resource?.id).toBe("id");
 
     // Test write
@@ -78,7 +78,7 @@ describe("ACL with new descriptor types (create, update, delete)", () => {
       ...data,
       resource: { ...data.resource, content: "Updated by Write" },
     };
-    const [writeResult] = acl.write(newData, user);
+    const [writeResult] = acl.apply(newData, user, SDE.write, true);
     expect(writeResult.resource?.content).toBe("Updated by Write");
   });
 });

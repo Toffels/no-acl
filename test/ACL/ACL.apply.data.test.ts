@@ -126,10 +126,15 @@ describe("ACL.apply() from Zod with realistic data.", () => {
 
   it("should care about not showing the creditcard information to admins", () => {
     const data = <z.infer<typeof tenantSchema>>{};
-    const [applied, removed] = tenantSchema.acl.read(data, {
-      roles: ["admin"],
-      groups: ["tenant_a"],
-    });
+    const [applied, removed] = tenantSchema.acl.apply(
+      data,
+      {
+        roles: ["admin"],
+        groups: ["tenant_a"],
+      },
+      SDE.write,
+      true
+    );
 
     expect(removed).toContain("paymentInfo.cardNumber");
     expect(removed).toContain("paymentInfo.expiryDate");

@@ -224,27 +224,27 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
 
   /** Modifies the input data object and removes any property that is not readable by the provided user. */
   public read(data: Data, user: User) {
-    return this.apply(data, user, SimpleDescriptorEnum.read);
+    return this.apply(data, user, SimpleDescriptorEnum.read, undefined);
   }
 
   /** Modifies the input data object and removes any property that is not writable by the provided user. */
   public write(data: Data, user: User) {
-    return this.apply(data, user, SimpleDescriptorEnum.write);
+    return this.apply(data, user, SimpleDescriptorEnum.write, undefined);
   }
 
   public create(data: Data, user: User) {
-    return this.apply(data, user, SimpleDescriptorEnum.create);
+    return this.apply(data, user, SimpleDescriptorEnum.create, undefined);
   }
 
   public update(data: Data, user: User) {
-    return this.apply(data, user, SimpleDescriptorEnum.update);
+    return this.apply(data, user, SimpleDescriptorEnum.update, undefined);
   }
 
   public delete(data: Data, user: User) {
-    return this.apply(data, user, SimpleDescriptorEnum.delete);
+    return this.apply(data, user, SimpleDescriptorEnum.delete, undefined);
   }
 
-  private apply(
+  public apply<Meta extends undefined | true>(
     data: Data,
     user: User,
     /** filters the data by either read, write or readWrite access. */
@@ -253,8 +253,16 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
       | SimpleDescriptorEnum.write
       | SimpleDescriptorEnum.create
       | SimpleDescriptorEnum.update
-      | SimpleDescriptorEnum.delete
-  ) {
+      | SimpleDescriptorEnum.delete,
+    meta: Meta
+  ): Meta extends true
+    ? [
+        data: DeepPartialNullable<Data>,
+        removals: string[],
+        roleTable: Record<string, string | string[] | undefined>,
+        pathTable: Record<string, string | string[] | undefined>
+      ]
+    : DeepPartialNullable<Data> {
     // Validate data input.
     this.validate(data);
 
@@ -270,7 +278,8 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
 
     // Setup tracking of to be removed keys.
     const removals: string[] = [];
-    const match: Record<string, undefined | string | string[]> = {};
+    const paths: Record<string, undefined | string | string[]> = {};
+    const roles: Record<string, undefined | string | string[]> = {};
     const logs: string[] = [];
 
     if (this.debug) console.log("flatDataKeys", flatDataKeys);
@@ -290,15 +299,14 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
           if (this.debug)
             logs.push(
               `  Skip: '${key}'${
-                match[key] ? ` ('${match[key]}')` : ""
+                paths[key] ? ` ('${paths[key]}')` : ""
               } matches already removed key: '${matchingKeyInRemovals}'`
             );
 
           continue;
         }
 
-        if (this.debug) match[key] = this.getDescriptor(key, true);
-        const [descriptor, roles] = this.evalDescriptor(
+        const [descriptor, _roles] = this.evalDescriptor(
           this.getDescriptor(key),
           user,
           type
@@ -315,26 +323,43 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
           if (this.debug)
             logs.push(
               `Remove: '${key}'${
-                match[key] ? ` ('${match[key]}')` : ""
-              } based on descriptor: '${descriptor}' and roles: ${roles}`
+                paths[key] ? ` ('${paths[key]}')` : ""
+              } based on descriptor: '${descriptor}' and roles: ${_roles}`
             );
           removals.push(key);
         }
+
+        if (meta) {
+          paths[key] = this.getDescriptor(key, true);
+          roles[key] = _roles;
+        }
       }
 
-    if (this.debug) {
-      console.log(logs);
-      console.log(match);
-    }
+    if (this.debug) console.log(logs);
 
     for (var removal of removals) {
       setValueByPath(copy, removal, undefined);
     }
 
-    return [removeEmptyObjects(copy), removals] as [
-      data: DeepPartialNullable<Data>,
-      removals: string[]
-    ];
+    const result = (
+      meta === true
+        ? ([removeEmptyObjects(copy), removals, roles, paths] as [
+            data: DeepPartialNullable<Data>,
+            removals: string[],
+            roleTable: Record<string, string | string[] | undefined>,
+            pathTable: Record<string, string | string[] | undefined>
+          ])
+        : removeEmptyObjects(copy)
+    ) as Meta extends true
+      ? [
+          data: DeepPartialNullable<Data>,
+          removals: string[],
+          roleTable: Record<string, string | string[] | undefined>,
+          pathTable: Record<string, string | string[] | undefined>
+        ]
+      : DeepPartialNullable<Data>;
+
+    return result;
   }
 
   /** Gets the plain descriptor by path.
