@@ -28,8 +28,14 @@ type ZodAcl<
 declare module "zod" {
   interface ZodType {
     descriptor: Descriptor;
-    a: (descriptor: Descriptor) => this;
-    assignDescriptor: (descriptor: Descriptor) => this;
+    a: <Z extends z.ZodType, D extends Descriptor>(
+      this: Z,
+      descriptor: D
+    ) => Z & { descriptor: D };
+    assignDescriptor: <Z extends z.ZodType, D extends Descriptor>(
+      this: Z,
+      descriptor: D
+    ) => Z & { descriptor: D };
     A: <Z extends z.ZodType, User extends GenericUser, Vars extends Variables>(
       this: Z,
       options?: Options<Vars, User>
@@ -46,9 +52,12 @@ declare module "zod" {
   }
 }
 
-ZodType.prototype.a = function (this: ZodType, descriptor: Descriptor) {
+ZodType.prototype.a = function <Z extends z.ZodType, D extends Descriptor>(
+  this: ZodType,
+  descriptor: D
+) {
   this.descriptor = descriptor;
-  return this;
+  return this as Z & { descriptor: D };
 };
 ZodType.prototype.assignDescriptor = ZodType.prototype.a;
 
@@ -70,7 +79,7 @@ export function a<Z extends z.ZodType, D extends Descriptor>(des: D, zod: Z) {
     descriptor: des,
   };
   Object.assign(zod, extension);
-  return zod as typeof extension & Z;
+  return zod as Z & { descriptor: D };
 }
 export const assignDescriptor = a;
 
