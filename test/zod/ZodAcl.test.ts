@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { za, ZAcl } from "../../src/zod/ZAcl";
+import { a, A } from "../../src/zod/AssignAcl";
 
 describe("ZAcl", () => {
-  const ztest = ZAcl(
+  const ztest = A(
     z.object({
-      id: za("@read", z.string()),
+      id: a("@read", z.string()),
     })
   );
 
@@ -18,78 +18,75 @@ describe("ZAcl", () => {
     expect(test.id).toBe("asd");
   });
 
-  const myComplexSchema = ZAcl(
+  const myComplexSchema = A(
     z.object({
-      string: za("@r", z.string()),
-      email: za("@r", z.string().min(5).max(100).email()),
-      number_int: za("@r", z.number().int().positive().lt(100)),
-      boolean: za("@r", z.boolean().default(false)),
-      nullish: za("@r", z.null().optional()),
-      array: za(
+      string: a("@r", z.string()),
+      email: a("@r", z.string().min(5).max(100).email()),
+      number_int: a("@r", z.number().int().positive().lt(100)),
+      boolean: a("@r", z.boolean().default(false)),
+      nullish: a("@r", z.null().optional()),
+      array: a(
         "@r",
         z.array(
           z.object({
-            name: za("@r", z.string()),
+            name: a("@r", z.string()),
             age: z.number().int(),
           })
         )
       ),
-      object: za(
+      object: a(
         "@r",
         z.object({
-          nested: za("@r", z.string().url()),
-          anotherNumber: za("@r", z.number().nonnegative()),
+          nested: a("@r", z.string().url()),
+          anotherNumber: a("@r", z.number().nonnegative()),
         })
       ),
-      tuple: za("@r", z.tuple([z.string(), z.number(), z.boolean()])),
-      union: za(
-        "@r",
-        z.union([za("@rw", z.string()), z.number(), z.boolean()])
-      ),
-      intersection: za(
+      tuple: a("@r", z.tuple([z.string(), z.number(), z.boolean()])),
+      union: a("@r", z.union([a("@rw", z.string()), z.number(), z.boolean()])),
+      intersection: a(
         "@r",
         z.intersection(
-          za("@r", z.object({ shared: za("@r", z.string()) })),
-          za(
+          a("@r", z.object({ shared: a("@r", z.string()) })),
+          a(
             "@r",
             z.object({
-              shared: za("@r", z.string()),
-              unique: za("@r", z.number().optional()),
+              shared: a("@r", z.string()),
+              unique: a("@r", z.number().optional()),
             })
           )
         )
       ),
-      enum: za("@r", z.enum(["Cat", "Dog", "Bird"])),
-      literal: za("@r", z.literal(42)),
-      date: za("@r", z.date().or(z.string().transform((str) => new Date(str)))),
-      promise: za("@r", z.promise(z.string())),
-      record: za(
+      enum: a("@r", z.enum(["Cat", "Dog", "Bird"])),
+      literal: a("@r", z.literal(42)),
+      date: a("@r", z.date().or(z.string().transform((str) => new Date(str)))),
+      promise: a("@r", z.promise(z.string())),
+      record: a(
         "@r",
         z.record(
           z.object({
-            number: za("@r", z.number()),
-            obj: za(
+            number: a("@r", z.number()),
+            obj: a(
               "@r",
               z.object({
-                str: za("@r", z.string()),
+                str: a("@r", z.string()),
               })
             ),
-            rec: za("@r", z.record(z.string())),
+            rec: a("@r", z.record(z.string())),
           })
         )
       ),
 
-      map: za("@r", z.map(z.string(), z.number())),
-      set: za("@r", z.set(z.string())),
-      function: za("@r", z.function(z.tuple([z.string()]), z.number())),
+      map: a("@r", z.map(z.string(), z.number())),
+      set: a("@r", z.set(z.string())),
+      function: a("@r", z.function(z.tuple([z.string()]), z.number())),
 
-      refinement: za(
+      refinement: a(
         "@r",
         z.string().refine((val) => val.startsWith("Hello"), {
           message: "String must start with 'Hello'",
         })
       ),
-      preprocess: za(
+      preprocess: a(
         "@r",
         z.preprocess((input) => {
           if (typeof input === "string") {
@@ -98,20 +95,20 @@ describe("ZAcl", () => {
           return input;
         }, z.string())
       ),
-      bigint: za("@r", z.bigint()),
-      any: za("@r", z.any()),
-      unknown: za("@r", z.unknown()),
-      void: za("@r", z.void()),
-      never: za("@r", z.never()),
-      optional: za("@r", z.string().optional()),
-      nullable: za("@r", z.string().nullable()),
-      default: za("@r", z.string().default("Default value")),
-      transform: za(
+      bigint: a("@r", z.bigint()),
+      any: a("@r", z.any()),
+      unknown: a("@r", z.unknown()),
+      void: a("@r", z.void()),
+      never: a("@r", z.never()),
+      optional: a("@r", z.string().optional()),
+      nullable: a("@r", z.string().nullable()),
+      default: a("@r", z.string().default("Default value")),
+      transform: a(
         "@r",
         z.number().transform((n) => n.toString())
       ),
-      brand: za("@r", z.string().brand<"Brand">()),
-      custom: za(
+      brand: a("@r", z.string().brand<"Brand">()),
+      custom: a(
         "@r",
         z.string().refine((val) => val.includes("@"), {
           message: "String must include '@'",

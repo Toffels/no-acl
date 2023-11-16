@@ -7,4 +7,4 @@ export type { DeepPartial } from "./utils/DeepPartial";
 export type { SimpleDescriptor } from "./Types";
 export { SimpleDescriptorEnum, SDE } from "./Types";
 
-export { za, ZAcl } from "./zod/ZAcl";
+export { a as za, A as ZAcl } from "./zod/AssignAcl";

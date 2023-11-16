@@ -9,7 +9,17 @@ import {
   SpecialDescriptor,
 } from "../../src/Types";
 import { getValueByPath } from "../../src/utils/utils";
-import { ZAcl, za } from "../../src/zod/ZAcl";
+import { A, a } from "../../src/zod/AssignAcl";
+
+// Chaining-Syntax
+const simpleObjectA = z
+  .object({ name: z.string().a("@read") })
+  .A({ vars: { "@read": SDE.read } });
+
+// Wrapping-Syntax
+const simpleObjectB = A(z.object({ name: a("@read", z.string()) }), {
+  vars: { "@read": SDE.read },
+});
 
 describe("ACL.apply() from Zod with realistic data.", () => {
   type User = { roles: string[]; groups?: string[] };
@@ -39,28 +49,28 @@ describe("ACL.apply() from Zod with realistic data.", () => {
     "@adminnever": { d: SDE.never, roles: ["admin", "support"] },
   } as Record<`@${string}`, Descriptor>;
 
-  const tenantSchema = ZAcl(
+  const tenantSchema = A(
     z.object({
       // In a real model it probably would be @aread
-      id: za("@read", z.string()),
-      name: za("@arw", z.string()),
-      paymentInfo: za(
+      id: a("@read", z.string()),
+      name: a("@arw", z.string()),
+      paymentInfo: a(
         ["@aread", "@userwrite"],
         z.object({
-          cardNumber: za("@adminnever", z.string()),
-          expiryDate: za("@adminnever", z.string()),
-          cvv: za("@adminnever", z.string().optional()),
+          cardNumber: a("@adminnever", z.string()),
+          expiryDate: a("@adminnever", z.string()),
+          cvv: a("@adminnever", z.string().optional()),
           billingAddress: z.string(),
         })
       ),
-      subscriptionPlan: za("@arw", z.enum(["basic", "premium", "enterprise"])),
-      gameEnginesAccess: za("@arw", z.array(z.string())), // List of game engines available to the tenant
-      supportTier: za("@arw", z.enum(["standard", "priority", "vip"])),
-      metaData: za("@arw", z.record(z.string(), z.any())),
-      projectIds: za("@arw", z.array(z.string())),
-      creationDate: za("@arw", z.date()),
-      lastModifiedDate: za("@arw", z.date()),
-      status: za("@arw", z.enum(["active", "inactive", "suspended"])),
+      subscriptionPlan: a("@arw", z.enum(["basic", "premium", "enterprise"])),
+      gameEnginesAccess: a("@arw", z.array(z.string())), // List of game engines available to the tenant
+      supportTier: a("@arw", z.enum(["standard", "priority", "vip"])),
+      metaData: a("@arw", z.record(z.string(), z.any())),
+      projectIds: a("@arw", z.array(z.string())),
+      creationDate: a("@arw", z.date()),
+      lastModifiedDate: a("@arw", z.date()),
+      status: a("@arw", z.enum(["active", "inactive", "suspended"])),
     }),
     {
       vars,
@@ -70,9 +80,9 @@ describe("ACL.apply() from Zod with realistic data.", () => {
 
   const projectSchema = z
     .object({
-      id: za("@read", z.string()),
-      name: z.string().za("@read"),
-      tenantId: z.string(),
+      id: a("@read", z.string()),
+      name: z.string().a("@read"),
+      tenantId: z.string().assignDescriptor("@read"),
       gameGenre: z.enum([
         "action",
         "strategy",
@@ -101,7 +111,7 @@ describe("ACL.apply() from Zod with realistic data.", () => {
       lastModifiedDate: z.date(),
       status: z.enum(["active", "inactive", "pending", "released"]),
     })
-    .zacl({
+    .A({
       vars,
       getRoles,
     });
@@ -112,6 +122,7 @@ describe("ACL.apply() from Zod with realistic data.", () => {
 
   it("should have the descriptor property", () => {
     expect(projectSchema.shape.name.descriptor).toBe("@read");
+    expect(projectSchema.shape.tenantId.descriptor).toBe("@read");
   });
 
   const tenantSchemaAclJson = tenantSchema.acl.toJson();

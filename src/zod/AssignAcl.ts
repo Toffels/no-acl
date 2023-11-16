@@ -15,32 +15,69 @@ import {
 import { Acl, Descriptor, GenericUser } from "../Types";
 import { ACL, Options } from "../ACL";
 
+//// EXPORT functionality. ////////////////////////////////////////////////////////
+
+type ZodAcl<Z extends ZodType, User extends GenericUser> = Z & {
+  acl: ACL<z.infer<Z>, User>;
+};
+
 declare module "zod" {
   interface ZodType {
     descriptor: Descriptor;
-    za: (descriptor: Descriptor) => this;
-    zacl: <Z extends z.ZodType, User extends GenericUser>(
+    a: (descriptor: Descriptor) => this;
+    assignDescriptor: (descriptor: Descriptor) => this;
+    A: <Z extends z.ZodType, User extends GenericUser>(
       this: Z,
       options?: Options<User>
-    ) => Z & { acl: ACL<z.infer<Z>, User> };
+    ) => ZodAcl<Z, User>;
+    AssignAcl: <Z extends z.ZodType, User extends GenericUser>(
+      this: Z,
+      options?: Options<User>
+    ) => ZodAcl<Z, User>;
   }
 }
 
-ZodType.prototype.za = function (this: ZodType, descriptor: Descriptor) {
+ZodType.prototype.a = function (this: ZodType, descriptor: Descriptor) {
   this.descriptor = descriptor;
   return this;
 };
+ZodType.prototype.assignDescriptor = ZodType.prototype.a;
 
-ZodType.prototype.zacl = function <
-  Z extends z.ZodType,
-  User extends GenericUser
->(this: Z, options?: Options<User>) {
+ZodType.prototype.A = function <Z extends z.ZodType, User extends GenericUser>(
+  this: Z,
+  options?: Options<User>
+) {
   const json = getDescriptor(this, "", true);
   const acl = ACL.FromJson<z.infer<Z>, User>(json, options);
 
   Object.assign(this, { acl });
-  return this as Z & { acl: ACL<z.infer<Z>, User> };
+  return this as ZodAcl<Z, User>;
 };
+ZodType.prototype.AssignAcl = ZodType.prototype.A;
+
+export function a<Z extends z.ZodType, D extends Descriptor>(des: D, zod: Z) {
+  const extension = {
+    descriptor: des,
+  };
+  Object.assign(zod, extension);
+  return zod as typeof extension & Z;
+}
+export const assignDescriptor = a;
+
+export function A<Z extends z.ZodType, User extends GenericUser>(
+  zod: Z,
+  options?: Options<User>,
+  debug?: boolean
+): Z & ZodAcl<Z, User> {
+  const json = getDescriptor(zod, "", true, debug);
+  const acl = ACL.FromJson<z.infer<Z>, User>(json, options);
+
+  Object.assign(zod, { acl });
+  return zod as Z & ZodAcl<Z, User>;
+}
+export const AssignAcl = A;
+
+//// /////////////////////////////////////////////////////////////////////////////
 
 function createPath(path: string, key: string) {
   return `${path === "" ? "" : `${path}.`}${key}`;
@@ -163,24 +200,4 @@ function getDescriptor<Z extends z.ZodType, D extends Descriptor>(
   }
 
   return acl;
-}
-
-export function za<Z extends z.ZodType, D extends Descriptor>(des: D, zod: Z) {
-  const extension = {
-    descriptor: des,
-  };
-  Object.assign(zod, extension);
-  return zod as typeof extension & Z;
-}
-
-export function ZAcl<Z extends z.ZodType, User extends GenericUser>(
-  zod: Z,
-  options?: Options<User>,
-  debug?: boolean
-): Z & { acl: ACL<z.infer<Z>, User> } {
-  const json = getDescriptor(zod, "", true, debug);
-  const acl = ACL.FromJson<z.infer<Z>, User>(json, options);
-
-  Object.assign(zod, { acl });
-  return zod as Z & { acl: ACL<z.infer<Z>, User> };
 }
