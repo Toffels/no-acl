@@ -1,27 +1,45 @@
 import {
+  z,
   ZodEffects,
   ZodObject,
   ZodRecord,
   ZodUnion,
   ZodIntersection,
-  z,
   ZodArray,
   ZodOptional,
   ZodDefault,
-  ZodAnyDef,
   ZodDefaultDef,
-  ZodTypeAny,
   ZodType,
   ZodRecordDef,
-  ZodFunction,
-  boolean,
 } from "zod";
 import { Acl, Descriptor, GenericUser } from "../Types";
 import { ACL, Options } from "../ACL";
-import { isObj } from "../utils/utils";
 
-type E<D extends Descriptor = Descriptor> = {
-  descriptor: D;
+declare module "zod" {
+  interface ZodType {
+    descriptor: Descriptor;
+    za: (descriptor: Descriptor) => this;
+    zacl: <Z extends z.ZodType, User extends GenericUser>(
+      this: Z,
+      options?: Options<User>
+    ) => Z & { acl: ACL<z.infer<Z>, User> };
+  }
+}
+
+ZodType.prototype.za = function (this: ZodType, descriptor: Descriptor) {
+  this.descriptor = descriptor;
+  return this;
+};
+
+ZodType.prototype.zacl = function <
+  Z extends z.ZodType,
+  User extends GenericUser
+>(this: Z, options?: Options<User>) {
+  const json = getDescriptor(this, "", true);
+  const acl = ACL.FromJson<z.infer<Z>, User>(json, options);
+
+  Object.assign(this, { acl });
+  return this as Z & { acl: ACL<z.infer<Z>, User> };
 };
 
 function createPath(path: string, key: string) {
@@ -52,8 +70,8 @@ function getDescriptor<Z extends z.ZodType, D extends Descriptor>(
 ) {
   const acl: Acl = {};
 
-  if (path && (zod as Z & E)?.descriptor) {
-    acl[path] = (zod as Z & E).descriptor;
+  if (path && zod?.descriptor) {
+    acl[path] = zod.descriptor;
 
     if (!deep) return acl;
   }
@@ -74,9 +92,9 @@ function getDescriptor<Z extends z.ZodType, D extends Descriptor>(
   }
 
   if (zod instanceof ZodIntersection) {
-    const left = zod._def.left as ZodType & E;
-    const right = zod._def.right as ZodType & E;
-    const options = [left, right] as [ZodType & E, ZodType & E];
+    const left = zod._def.left as ZodType;
+    const right = zod._def.right as ZodType;
+    const options = [left, right] as [ZodType, ZodType];
 
     const optionDescriptors = options.map((o) =>
       getDescriptor(o as any, path, deep, debug)
@@ -99,10 +117,10 @@ function getDescriptor<Z extends z.ZodType, D extends Descriptor>(
   }
 
   if (zod instanceof ZodRecord) {
-    acl[path] = (zod as unknown as E).descriptor;
+    acl[path] = zod.descriptor;
 
     const wildcardPath = createPath(path, "*");
-    acl[wildcardPath] = (zod as unknown as E).descriptor;
+    acl[wildcardPath] = zod.descriptor;
 
     const recordDefinition = zod._def as ZodRecordDef;
     const valueDefinition = getDescriptor(
@@ -136,7 +154,7 @@ function getDescriptor<Z extends z.ZodType, D extends Descriptor>(
 
   if ((zod?._def as ZodDefaultDef)?.innerType) {
     const def = (zod._def as ZodDefaultDef)
-      .innerType as ZodDefaultDef["innerType"] & E;
+      .innerType as ZodDefaultDef["innerType"];
 
     if (def.descriptor) {
       acl[path] = def.descriptor;
@@ -148,7 +166,7 @@ function getDescriptor<Z extends z.ZodType, D extends Descriptor>(
 }
 
 export function za<Z extends z.ZodType, D extends Descriptor>(des: D, zod: Z) {
-  const extension: E<D> = {
+  const extension = {
     descriptor: des,
   };
   Object.assign(zod, extension);
@@ -160,9 +178,6 @@ export function ZAcl<Z extends z.ZodType, User extends GenericUser>(
   options?: Options<User>,
   debug?: boolean
 ): Z & { acl: ACL<z.infer<Z>, User> } {
-  // type InferUser = typeof options extends Options<infer U> ? U : User;
-
-  // findDescriptors(zod);
   const json = getDescriptor(zod, "", true, debug);
   const acl = ACL.FromJson<z.infer<Z>, User>(json, options);
 

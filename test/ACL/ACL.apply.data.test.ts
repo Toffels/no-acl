@@ -1,7 +1,8 @@
-import { z } from "zod";
+import { ZodObject, z } from "zod";
 import { ACL } from "../../src/ACL";
 import {
   ArrayDescriptor,
+  Descriptor,
   GenericUser,
   SDE,
   SimpleDescriptorEnum,
@@ -13,10 +14,36 @@ import { ZAcl, za } from "../../src/zod/ZAcl";
 describe("ACL.apply() from Zod with realistic data.", () => {
   type User = { roles: string[]; groups?: string[] };
 
+  const getRoles = (user: User) => [
+    ...user.roles,
+    ...(user.groups ?? []).map((grp) => `tenant_${grp}`),
+  ];
+  const tenantRegex = "regex#^tenant_.*$#" as const;
+  const vars = {
+    "@userread": { d: SDE.read, roles: [tenantRegex] },
+    "@userwrite": { d: SDE.write, roles: [tenantRegex] },
+    "@userreadwrite": { d: SDE.readWrite, roles: [tenantRegex] },
+    // authorized read
+    "@aread": [
+      { d: SDE.read, roles: [tenantRegex] },
+      { d: SDE.read, roles: ["admin", "support"] },
+    ],
+    // authorized write
+    "@awrite": [
+      { d: SDE.write, roles: [tenantRegex] },
+      { d: SDE.write, roles: ["admin"] },
+    ],
+    // authorized read & authorized write
+    "@arw": ["@aread", "@awrite"],
+    // Admin NEVER
+    "@adminnever": { d: SDE.never, roles: ["admin", "support"] },
+  } as Record<`@${string}`, Descriptor>;
+
   const tenantSchema = ZAcl(
     z.object({
-      id: za("@aread", z.string()),
-      name: za(["@awrite", "@aread"], z.string()),
+      // In a real model it probably would be @aread
+      id: za("@read", z.string()),
+      name: za("@arw", z.string()),
       paymentInfo: za(
         ["@aread", "@userwrite"],
         z.object({
@@ -36,34 +63,15 @@ describe("ACL.apply() from Zod with realistic data.", () => {
       status: za("@arw", z.enum(["active", "inactive", "suspended"])),
     }),
     {
-      getRoles: (user: User) => [
-        ...user.roles,
-        ...(user.groups ?? []).map((grp) => `tenant_${grp}`),
-      ],
-      vars: {
-        "@userread": { d: SDE.read, roles: ["regex#^tenant_.*$#"] },
-        "@userwrite": { d: SDE.write, roles: ["regex#^tenant_.*$#"] },
-        "@userreadwrite": { d: SDE.readWrite, roles: ["regex#^tenant_.*$#"] },
-        // authorized
-        "@aread": [
-          { d: SDE.read, roles: ["regex#^tenant_.*$#"] },
-          { d: SDE.read, roles: ["admin", "support"] },
-        ],
-        // authorized
-        "@awrite": [
-          { d: SDE.write, roles: ["regex#^tenant_.*$#"] },
-          { d: SDE.write, roles: ["admin"] },
-        ],
-        "@arw": ["@aread", "@awrite"],
-        "@adminnever": { d: SDE.never, roles: ["admin", "support"] },
-      },
+      vars,
+      getRoles,
     }
   );
 
-  const projectSchema = ZAcl(
-    z.object({
-      id: z.string(),
-      name: z.string(),
+  const projectSchema = z
+    .object({
+      id: za("@read", z.string()),
+      name: z.string().za("@read"),
       tenantId: z.string(),
       gameGenre: z.enum([
         "action",
@@ -93,14 +101,27 @@ describe("ACL.apply() from Zod with realistic data.", () => {
       lastModifiedDate: z.date(),
       status: z.enum(["active", "inactive", "pending", "released"]),
     })
-  );
+    .zacl({
+      vars,
+      getRoles,
+    });
 
-  const tenantSchemaJson = tenantSchema.acl.toJson();
+  it("should have the acl property", () => {
+    expect(projectSchema.acl).toBeInstanceOf(ACL);
+  });
+
+  it("should have the descriptor property", () => {
+    expect(projectSchema.shape.name.descriptor).toBe("@read");
+  });
+
+  const tenantSchemaAclJson = tenantSchema.acl.toJson();
   it("should have a regex in the roles for variable aread", () => {
     expect(
-      ((tenantSchemaJson["@aread"] as ArrayDescriptor)[0] as SpecialDescriptor)[
-        "roles"
-      ][0]
+      (
+        (
+          tenantSchemaAclJson["@aread"] as ArrayDescriptor
+        )[0] as SpecialDescriptor
+      )["roles"][0]
     ).toBe("regex#^tenant_.*$#");
   });
 
@@ -112,7 +133,7 @@ describe("ACL.apply() from Zod with realistic data.", () => {
       tenantSchema.acl
     );
 
-    expect(getDescriptor("name")).toStrictEqual(["@awrite", "@aread"]);
+    expect(getDescriptor("name")).toStrictEqual(["@aread", "@awrite"]);
     expect(
       evalDescriptor(getDescriptor("name"), { roles: [] }, SDE.read)
     ).toStrictEqual([SDE.none]);
@@ -126,19 +147,27 @@ describe("ACL.apply() from Zod with realistic data.", () => {
 
   it("should care about not showing the creditcard information to admins", () => {
     const data = <z.infer<typeof tenantSchema>>{};
-    const [applied, removed] = tenantSchema.acl.apply(
+    const [applied, removed, roles, paths] = tenantSchema.acl.apply(
       data,
       {
         roles: ["admin"],
-        groups: ["tenant_a"],
+        groups: ["Google"],
       },
       SDE.write,
       true
     );
 
+    expect(roles["id"]).toStrictEqual(undefined);
+    // It resolves with the first role found.
+    // The first role here comes from the @arw > @aread > tenant-regex
+    expect(roles["name"]).toStrictEqual(["tenant_Google"]);
+
     expect(removed).toContain("paymentInfo.cardNumber");
+    expect(roles["paymentInfo.cardNumber"]).toStrictEqual(["admin"]);
     expect(removed).toContain("paymentInfo.expiryDate");
+    expect(roles["paymentInfo.expiryDate"]).toStrictEqual(["admin"]);
     expect(removed).toContain("paymentInfo.cvv");
+    expect(roles["paymentInfo.cvv"]).toStrictEqual(["admin"]);
   });
 
   console.log(tenantSchema.acl.toString(true));

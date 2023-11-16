@@ -70,15 +70,23 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
       )
     );
 
-    return result
-      .sort((a, b) => {
-        const _a = a.split(":").shift();
-        const _b = b.split(":").shift();
-        const ab = _a!.length - _b!.length;
-        if (ab !== 0) return ab;
-        return (_b as any) - (_a as any);
-      })
-      .join("\n");
+    return (
+      result
+        .sort((a, b) => {
+          const _a = a.split(":").shift();
+          const _b = b.split(":").shift();
+          const ab = _a!.length - _b!.length;
+          if (ab !== 0) return ab;
+          return (_b as any) - (_a as any);
+        })
+        // .map((line) =>
+        //   [
+        //     line.substring(0, line.indexOf(":") + 1),
+        //     line.substring(line.indexOf(":") + 2),
+        //   ].join("\n   ")
+        // )
+        .join("\n")
+    );
   }
 
   public toJson(
