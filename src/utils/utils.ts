@@ -2,6 +2,7 @@ export { serializeDescriptor } from "./serialize";
 export { removeEmptyObjects, isEmptyObject } from "./removeEmptyObjects";
 export { assureDescriptor } from "./parse";
 export { getWildCardPaths } from "./getWildCardPaths";
+export { Var } from "./Var";
 
 type BaseType = number | string | boolean;
 type GenericObject<T = any> = Record<string, T>;

@@ -8,17 +8,17 @@ import {
   SimpleDescriptorEnum,
   SpecialDescriptor,
 } from "../../src/Types";
-import { getValueByPath } from "../../src/utils/utils";
+import { Var, getValueByPath } from "../../src/utils/utils";
 import { A, a } from "../../src/zod/AssignAcl";
 
 // Chaining-Syntax
 const simpleObjectA = z
   .object({ name: z.string().a("@read") })
-  .A({ vars: { "@read": SDE.read } });
+  .A({ vars: { "@read": SDE.read, roles: [] } });
 
 // Wrapping-Syntax
 const simpleObjectB = A(z.object({ name: a("@read", z.string()) }), {
-  vars: { "@read": SDE.read },
+  vars: { "@read": SDE.read, roles: [] },
 });
 
 describe("ACL.apply() from Zod with realistic data.", () => {
@@ -29,7 +29,7 @@ describe("ACL.apply() from Zod with realistic data.", () => {
     ...(user.groups ?? []).map((grp) => `tenant_${grp}`),
   ];
   const tenantRegex = "regex#^tenant_.*$#" as const;
-  const vars = {
+  const vars = Var({
     "@userread": { d: SDE.read, roles: [tenantRegex] },
     "@userwrite": { d: SDE.write, roles: [tenantRegex] },
     "@userreadwrite": { d: SDE.readWrite, roles: [tenantRegex] },
@@ -47,7 +47,7 @@ describe("ACL.apply() from Zod with realistic data.", () => {
     "@arw": ["@aread", "@awrite"],
     // Admin NEVER
     "@adminnever": { d: SDE.never, roles: ["admin", "support"] },
-  } as Record<`@${string}`, Descriptor>;
+  });
 
   const tenantSchema = A(
     z.object({

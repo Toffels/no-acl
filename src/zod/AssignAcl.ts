@@ -12,13 +12,17 @@ import {
   ZodType,
   ZodRecordDef,
 } from "zod";
-import { Acl, Descriptor, GenericUser } from "../Types";
+import { Acl, Descriptor, GenericUser, Variables } from "../Types";
 import { ACL, Options } from "../ACL";
 
 //// EXPORT functionality. ////////////////////////////////////////////////////////
 
-type ZodAcl<Z extends ZodType, User extends GenericUser> = Z & {
-  acl: ACL<z.infer<Z>, User>;
+type ZodAcl<
+  Z extends ZodType,
+  User extends GenericUser,
+  Vars extends Variables = Variables
+> = Z & {
+  acl: ACL<z.infer<Z>, User, Vars>;
 };
 
 declare module "zod" {
@@ -26,13 +30,17 @@ declare module "zod" {
     descriptor: Descriptor;
     a: (descriptor: Descriptor) => this;
     assignDescriptor: (descriptor: Descriptor) => this;
-    A: <Z extends z.ZodType, User extends GenericUser>(
+    A: <Z extends z.ZodType, User extends GenericUser, Vars extends Variables>(
       this: Z,
-      options?: Options<User>
+      options?: Options<Vars, User>
     ) => ZodAcl<Z, User>;
-    AssignAcl: <Z extends z.ZodType, User extends GenericUser>(
+    AssignAcl: <
+      Z extends z.ZodType,
+      User extends GenericUser,
+      Vars extends Variables
+    >(
       this: Z,
-      options?: Options<User>
+      options?: Options<Vars, User>
     ) => ZodAcl<Z, User>;
   }
 }
@@ -43,15 +51,16 @@ ZodType.prototype.a = function (this: ZodType, descriptor: Descriptor) {
 };
 ZodType.prototype.assignDescriptor = ZodType.prototype.a;
 
-ZodType.prototype.A = function <Z extends z.ZodType, User extends GenericUser>(
-  this: Z,
-  options?: Options<User>
-) {
+ZodType.prototype.A = function <
+  Z extends z.ZodType,
+  User extends GenericUser,
+  Vars extends Variables
+>(this: Z, options?: Options<Vars, User>) {
   const json = getDescriptor(this, "", true);
-  const acl = ACL.FromJson<z.infer<Z>, User>(json, options);
+  const acl = ACL.FromJson<z.infer<Z>, User, Vars>(json, options);
 
   Object.assign(this, { acl });
-  return this as ZodAcl<Z, User>;
+  return this as ZodAcl<Z, User, Vars>;
 };
 ZodType.prototype.AssignAcl = ZodType.prototype.A;
 
@@ -64,16 +73,20 @@ export function a<Z extends z.ZodType, D extends Descriptor>(des: D, zod: Z) {
 }
 export const assignDescriptor = a;
 
-export function A<Z extends z.ZodType, User extends GenericUser>(
+export function A<
+  Z extends z.ZodType,
+  User extends GenericUser,
+  Vars extends Variables
+>(
   zod: Z,
-  options?: Options<User>,
+  options?: Options<Vars, User>,
   debug?: boolean
-): Z & ZodAcl<Z, User> {
+): ZodAcl<Z, User, Vars> {
   const json = getDescriptor(zod, "", true, debug);
-  const acl = ACL.FromJson<z.infer<Z>, User>(json, options);
+  const acl = ACL.FromJson<z.infer<Z>, User, Vars>(json, options);
 
   Object.assign(zod, { acl });
-  return zod as Z & ZodAcl<Z, User>;
+  return zod as ZodAcl<Z, User, Vars>;
 }
 export const AssignAcl = A;
 

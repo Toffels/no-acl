@@ -81,3 +81,7 @@ export type Rebuild<T> = T extends (infer R)[]
       [K in keyof T]: Rebuild<T[K]>;
     }
   : T;
+
+export type Variables = {
+  [key: `@${string}`]: Descriptor;
+};

@@ -12,6 +12,7 @@ import {
   SDE,
   SpecialDescriptor,
   VariableDescriptorKey,
+  Variables,
 } from "./Types";
 import { DeepPartialNullable, DeepPartial } from "./utils/DeepPartial";
 import { serializeDescriptor } from "./utils/serialize";
@@ -26,8 +27,11 @@ function getParentPath(path: string) {
   return parent;
 }
 
-export type Options<User extends GenericUser = GenericUser> = {
-  vars?: { [key: `@${string}`]: Descriptor };
+export type Options<
+  Vars extends Variables = Variables,
+  User extends GenericUser = GenericUser
+> = {
+  vars?: Vars;
   /**
    * Falls back to:
    * ```(user: User) => user.roles```
@@ -36,7 +40,11 @@ export type Options<User extends GenericUser = GenericUser> = {
   strict?: boolean;
 };
 
-export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
+export class ACL<
+  Data extends {} = {},
+  User extends GenericUser = GenericUser,
+  Vars extends Variables = Variables
+> {
   #acl: Acl;
   #vars: Acl;
   #aclJson: Acl;
@@ -177,7 +185,7 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
 
   private strict = true;
 
-  protected constructor(aclJson: AclJson, options?: Options<User>) {
+  protected constructor(aclJson: AclJson, options?: Options<Vars, User>) {
     const { strict } = options ?? {};
     if (strict === false) {
       // console.warn(`None-Strict-Mode is not entirely tested.`);
@@ -194,7 +202,7 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
 
     Object.entries(options?.vars ?? {}).forEach(([key, des]) => {
       if (key.startsWith("@")) {
-        this.#vars[key] = assureDescriptor(des);
+        this.#vars[key] = assureDescriptor(des as Descriptor);
       }
     });
 
@@ -522,8 +530,9 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
 
   public static FromJson<
     Data extends {} = any,
-    User extends GenericUser = GenericUser
-  >(json: AclJson, options?: Options<User>) {
+    User extends GenericUser = GenericUser,
+    Vars extends Variables = Variables
+  >(json: AclJson, options?: Options<Vars, User>) {
     return new ACL<Data, User>(json, options);
   }
 }
