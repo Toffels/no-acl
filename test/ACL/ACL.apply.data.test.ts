@@ -26,17 +26,14 @@ describe("ACL.apply() from Zod with realistic data.", () => {
           billingAddress: z.string(),
         })
       ),
-      subscriptionPlan: za(
-        SDE.readWrite,
-        z.enum(["basic", "premium", "enterprise"])
-      ),
-      gameEnginesAccess: za(SDE.readWrite, z.array(z.string())), // List of game engines available to the tenant
-      supportTier: za(SDE.readWrite, z.enum(["standard", "priority", "vip"])),
-      metaData: za(SDE.readWrite, z.record(z.string(), z.any())),
-      projectIds: za(SDE.readWrite, z.array(z.string())),
-      creationDate: za(SDE.readWrite, z.date()),
-      lastModifiedDate: za(SDE.readWrite, z.date()),
-      status: za(SDE.readWrite, z.enum(["active", "inactive", "suspended"])),
+      subscriptionPlan: za("@arw", z.enum(["basic", "premium", "enterprise"])),
+      gameEnginesAccess: za("@arw", z.array(z.string())), // List of game engines available to the tenant
+      supportTier: za("@arw", z.enum(["standard", "priority", "vip"])),
+      metaData: za("@arw", z.record(z.string(), z.any())),
+      projectIds: za("@arw", z.array(z.string())),
+      creationDate: za("@arw", z.date()),
+      lastModifiedDate: za("@arw", z.date()),
+      status: za("@arw", z.enum(["active", "inactive", "suspended"])),
     }),
     {
       getRoles: (user: User) => [
@@ -57,6 +54,7 @@ describe("ACL.apply() from Zod with realistic data.", () => {
           { d: SDE.write, roles: ["regex#^tenant_.*$#"] },
           { d: SDE.write, roles: ["admin"] },
         ],
+        "@arw": ["@aread", "@awrite"],
         "@adminnever": { d: SDE.never, roles: ["admin", "support"] },
       },
     }
@@ -137,4 +135,6 @@ describe("ACL.apply() from Zod with realistic data.", () => {
     expect(removed).toContain("paymentInfo.expiryDate");
     expect(removed).toContain("paymentInfo.cvv");
   });
+
+  console.log(tenantSchema.acl.toString(true));
 });

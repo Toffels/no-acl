@@ -1,7 +1,7 @@
 import { InvalidInput } from "./errors/InvalidInput";
 import { NotImplemented } from "./errors/NotImplemented";
 import { VariableUndefined } from "./errors/VariableUndefined";
-import { flatten, setValueByPath } from "./utils/utils";
+import { flatten, serializeRegex, setValueByPath } from "./utils/utils";
 import {
   Acl,
   AclJson,
@@ -56,7 +56,18 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
     const result: string[] = [];
 
     Object.entries(this.toJson(flush)).forEach(([key, value]) =>
-      result.push(`${key}: ${value}`)
+      result.push(
+        `${key}: ${
+          typeof value === "object"
+            ? JSON.stringify(value, (key, value) => {
+                if (typeof value === "object" && value instanceof RegExp)
+                  return serializeRegex(value);
+
+                return value;
+              })
+            : value
+        }`
+      )
     );
 
     return result
@@ -77,17 +88,42 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
     if (flush) {
       const result = { ...this.#acl };
 
-      Object.entries(this.#acl).forEach(([key, value]) => {
-        if (typeof value === "string" && value.startsWith("@")) {
-          const variable = this.#vars[value];
-          if (!variable) delete result[key];
-          else if (typeof variable === "string" && variable.startsWith("@"))
-            throw new NotImplemented(
-              `Variable cross referencing a variable is not supported yet.`
-            );
-          else result[key] = variable;
-        }
-      });
+      while (
+        Object.values(result).some(
+          (value) =>
+            (Array.isArray(value) &&
+              value.some((v) => typeof v === "string" && v.startsWith("@"))) ||
+            (typeof value === "string" && value.startsWith("@"))
+        )
+      ) {
+        Object.entries(result).forEach(([key, value]) => {
+          if (Array.isArray(value)) {
+            result[key] = value.map((value) => {
+              if (typeof value === "string" && value.startsWith("@")) {
+                const variable = this.#vars[value];
+                if (!variable) return undefined;
+                else if (
+                  typeof variable === "string" &&
+                  variable.startsWith("@")
+                )
+                  throw new NotImplemented(
+                    `Variable cross referencing a variable is not supported yet.`
+                  );
+                else return variable;
+              }
+              return value;
+            }) as Descriptor;
+          } else if (typeof value === "string" && value.startsWith("@")) {
+            const variable = this.#vars[value];
+            if (!variable) delete result[key];
+            else if (typeof variable === "string" && variable.startsWith("@"))
+              throw new NotImplemented(
+                `Variable cross referencing a variable is not supported yet.`
+              );
+            else result[key] = variable;
+          }
+        });
+      }
 
       return result;
     }

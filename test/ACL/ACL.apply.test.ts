@@ -660,4 +660,7 @@ describe("ACL.apply() additional tests", () => {
     const [writeResult] = acl.write({ content: "New content" }, user);
     expect(writeResult.content).toBe("New content"); // Assuming write access is granted
   });
+
+  /** This could be useful to show in a ui, by which role a field is visible or invisible and so on ... */
+  it.todo("should be able to tell me how it resolved a field");
 });
