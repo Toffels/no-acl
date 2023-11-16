@@ -42,6 +42,7 @@ declare module "zod" {
       this: Z,
       options?: Options<Vars, User>
     ) => ZodAcl<Z, User>;
+    // infered: z.infer<this>;
   }
 }
 

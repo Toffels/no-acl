@@ -51,10 +51,6 @@ export class ACL<
 
   private readonly keys: string[];
 
-  public get acl() {
-    return { ...this.#acl };
-  }
-
   public debug = false;
 
   public toString(
