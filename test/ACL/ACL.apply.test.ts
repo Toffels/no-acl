@@ -702,5 +702,22 @@ describe("ACL.apply() additional tests", () => {
   });
 
   /** This could be useful to show in a ui, by which role a field is visible or invisible and so on ... */
-  it.todo("should be able to tell me how it resolved a field");
+  it("should be able to tell me how it resolved a field", () => {
+    const user = { roles: ["editor", "viewer"] };
+    const data = { content: "Editable content" };
+
+    const acl = ACL.FromJson({
+      content: [
+        { d: SimpleDescriptorEnum.read, roles: ["viewer"] },
+        { d: SimpleDescriptorEnum.write, roles: ["editor"] },
+      ],
+    });
+
+    const [, , roles, paths] = acl.apply(data, user, SDE.read, true);
+
+    // roles.content will be resolved by roles: [viewer]
+    expect(roles.content).toStrictEqual(["viewer"]);
+    // paths.content will be resolved with the path "content"
+    expect(paths.content).toBe("content");
+  });
 });
