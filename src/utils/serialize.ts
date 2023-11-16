@@ -9,11 +9,12 @@ export function serializeDescriptor(descriptor: Descriptor): Descriptor {
       // Special
     } else {
       const copy = { ...descriptor };
-      if (copy.roles instanceof RegExp) copy.roles = serializeRegex(copy.roles);
-      else if (Array.isArray(copy.roles)) {
-        const roles = copy.roles.map(serializeRegex);
-        copy.roles = [roles.shift()!, ...roles];
-      }
+
+      if (!Array.isArray(copy.roles))
+        throw new Error(`Descriptor property roles must be an array type.`);
+
+      const roles = copy.roles.map(serializeRegex);
+      copy.roles = [roles.shift()!, ...roles];
 
       return copy;
     }

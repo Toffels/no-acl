@@ -1,7 +1,7 @@
 import { InvalidInput } from "./errors/InvalidInput";
 import { NotImplemented } from "./errors/NotImplemented";
 import { VariableUndefined } from "./errors/VariableUndefined";
-import { flatten, getValueByPath, setValueByPath } from "./utils/utils";
+import { flatten, serializeRegex, setValueByPath } from "./utils/utils";
 import {
   Acl,
   AclJson,
@@ -12,12 +12,11 @@ import {
   SDE,
   SpecialDescriptor,
   VariableDescriptorKey,
+  Variables,
 } from "./Types";
 import { DeepPartialNullable, DeepPartial } from "./utils/DeepPartial";
 import { serializeDescriptor } from "./utils/serialize";
 import { assureDescriptor } from "./utils/parse";
-import { z } from "zod";
-import { FromZod } from "./FromZod";
 import { getWildCardPaths } from "./utils/getWildCardPaths";
 import { removeEmptyObjects } from "./utils/removeEmptyObjects";
 
@@ -28,16 +27,29 @@ function getParentPath(path: string) {
   return parent;
 }
 
-export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
+export type Options<
+  Vars extends Variables = Variables,
+  User extends GenericUser = GenericUser
+> = {
+  vars?: Vars;
+  /**
+   * Falls back to:
+   * ```(user: User) => user.roles```
+   */
+  getRoles?: (user: User) => string[];
+  strict?: boolean;
+};
+
+export class ACL<
+  Data extends {} = {},
+  User extends GenericUser = GenericUser,
+  Vars extends Variables = Variables
+> {
   #acl: Acl;
   #vars: Acl;
   #aclJson: Acl;
 
   private readonly keys: string[];
-
-  public get acl() {
-    return { ...this.#acl };
-  }
 
   public debug = false;
 
@@ -48,10 +60,37 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
     const result: string[] = [];
 
     Object.entries(this.toJson(flush)).forEach(([key, value]) =>
-      result.push(`${key}: ${value}`)
+      result.push(
+        `${key}: ${
+          typeof value === "object"
+            ? JSON.stringify(value, (key, value) => {
+                if (typeof value === "object" && value instanceof RegExp)
+                  return serializeRegex(value);
+
+                return value;
+              })
+            : value
+        }`
+      )
     );
 
-    return result.join("\n");
+    return (
+      result
+        .sort((a, b) => {
+          const _a = a.split(":").shift();
+          const _b = b.split(":").shift();
+          const ab = _a!.length - _b!.length;
+          if (ab !== 0) return ab;
+          return (_b as any) - (_a as any);
+        })
+        // .map((line) =>
+        //   [
+        //     line.substring(0, line.indexOf(":") + 1),
+        //     line.substring(line.indexOf(":") + 2),
+        //   ].join("\n   ")
+        // )
+        .join("\n")
+    );
   }
 
   public toJson(
@@ -61,17 +100,42 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
     if (flush) {
       const result = { ...this.#acl };
 
-      Object.entries(this.#acl).forEach(([key, value]) => {
-        if (typeof value === "string" && value.startsWith("@")) {
-          const variable = this.#vars[value];
-          if (!variable) delete result[key];
-          else if (typeof variable === "string" && variable.startsWith("@"))
-            throw new NotImplemented(
-              `Variable cross referencing a variable is not supported yet.`
-            );
-          else result[key] = variable;
-        }
-      });
+      while (
+        Object.values(result).some(
+          (value) =>
+            (Array.isArray(value) &&
+              value.some((v) => typeof v === "string" && v.startsWith("@"))) ||
+            (typeof value === "string" && value.startsWith("@"))
+        )
+      ) {
+        Object.entries(result).forEach(([key, value]) => {
+          if (Array.isArray(value)) {
+            result[key] = value.map((value) => {
+              if (typeof value === "string" && value.startsWith("@")) {
+                const variable = this.#vars[value];
+                if (!variable) return undefined;
+                else if (
+                  typeof variable === "string" &&
+                  variable.startsWith("@")
+                )
+                  throw new NotImplemented(
+                    `Variable cross referencing a variable is not supported yet.`
+                  );
+                else return variable;
+              }
+              return value;
+            }) as Descriptor;
+          } else if (typeof value === "string" && value.startsWith("@")) {
+            const variable = this.#vars[value];
+            if (!variable) delete result[key];
+            else if (typeof variable === "string" && variable.startsWith("@"))
+              throw new NotImplemented(
+                `Variable cross referencing a variable is not supported yet.`
+              );
+            else result[key] = variable;
+          }
+        });
+      }
 
       return result;
     }
@@ -115,16 +179,28 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
     "@delete": SDE.delete,
   };
 
-  protected constructor(aclJson: AclJson, private strict = true) {
-    if (!strict) {
-      console.warn(`Strict-Mode is not entirely tested.`);
+  private strict = true;
+
+  protected constructor(aclJson: AclJson, options?: Options<Vars, User>) {
+    const { strict } = options ?? {};
+    if (strict === false) {
+      // console.warn(`None-Strict-Mode is not entirely tested.`);
+      this.strict = strict;
     }
+
+    if (options?.getRoles) this.getRoles = options.getRoles;
 
     this.#aclJson = aclJson;
     this.#acl = {};
     this.#vars = {
       ...ACL.#DefaultVars,
     };
+
+    Object.entries(options?.vars ?? {}).forEach(([key, des]) => {
+      if (key.startsWith("@")) {
+        this.#vars[key] = assureDescriptor(des as Descriptor);
+      }
+    });
 
     Object.entries(aclJson).forEach(([key, des]) => {
       if (key.startsWith("@")) {
@@ -146,9 +222,7 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
   protected matchRoles(descriptor: SpecialDescriptor, user: User): string[] {
     const userRoles = this.getRoles(user);
     const matches: string[] = [];
-    const roles = Array.isArray(descriptor.roles)
-      ? descriptor.roles
-      : [descriptor.roles];
+    const { roles } = descriptor;
     for (const role of roles) {
       if (typeof role === "string" && userRoles.includes(role)) {
         matches.push(role);
@@ -162,27 +236,27 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
 
   /** Modifies the input data object and removes any property that is not readable by the provided user. */
   public read(data: Data, user: User) {
-    return this.apply(data, user, SimpleDescriptorEnum.read);
+    return this.apply(data, user, SimpleDescriptorEnum.read, undefined);
   }
 
   /** Modifies the input data object and removes any property that is not writable by the provided user. */
   public write(data: Data, user: User) {
-    return this.apply(data, user, SimpleDescriptorEnum.write);
+    return this.apply(data, user, SimpleDescriptorEnum.write, undefined);
   }
 
   public create(data: Data, user: User) {
-    return this.apply(data, user, SimpleDescriptorEnum.create);
+    return this.apply(data, user, SimpleDescriptorEnum.create, undefined);
   }
 
   public update(data: Data, user: User) {
-    return this.apply(data, user, SimpleDescriptorEnum.update);
+    return this.apply(data, user, SimpleDescriptorEnum.update, undefined);
   }
 
   public delete(data: Data, user: User) {
-    return this.apply(data, user, SimpleDescriptorEnum.delete);
+    return this.apply(data, user, SimpleDescriptorEnum.delete, undefined);
   }
 
-  private apply(
+  public apply<Meta extends undefined | true>(
     data: Data,
     user: User,
     /** filters the data by either read, write or readWrite access. */
@@ -191,8 +265,16 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
       | SimpleDescriptorEnum.write
       | SimpleDescriptorEnum.create
       | SimpleDescriptorEnum.update
-      | SimpleDescriptorEnum.delete
-  ) {
+      | SimpleDescriptorEnum.delete,
+    meta: Meta
+  ): Meta extends true
+    ? [
+        data: DeepPartialNullable<Data>,
+        removals: string[],
+        roleTable: Record<string, string | string[] | undefined>,
+        pathTable: Record<string, string | string[] | undefined>
+      ]
+    : DeepPartialNullable<Data> {
     // Validate data input.
     this.validate(data);
 
@@ -208,7 +290,8 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
 
     // Setup tracking of to be removed keys.
     const removals: string[] = [];
-    const match: Record<string, undefined | string | string[]> = {};
+    const paths: Record<string, undefined | string | string[]> = {};
+    const roles: Record<string, undefined | string | string[]> = {};
     const logs: string[] = [];
 
     if (this.debug) console.log("flatDataKeys", flatDataKeys);
@@ -228,15 +311,14 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
           if (this.debug)
             logs.push(
               `  Skip: '${key}'${
-                match[key] ? ` ('${match[key]}')` : ""
+                paths[key] ? ` ('${paths[key]}')` : ""
               } matches already removed key: '${matchingKeyInRemovals}'`
             );
 
           continue;
         }
 
-        if (this.debug) match[key] = this.getDescriptor(key, true);
-        const [descriptor, roles] = this.evalDescriptor(
+        const [descriptor, _roles] = this.evalDescriptor(
           this.getDescriptor(key),
           user,
           type
@@ -253,26 +335,43 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
           if (this.debug)
             logs.push(
               `Remove: '${key}'${
-                match[key] ? ` ('${match[key]}')` : ""
-              } based on descriptor: '${descriptor}' and roles: ${roles}`
+                paths[key] ? ` ('${paths[key]}')` : ""
+              } based on descriptor: '${descriptor}' and roles: ${_roles}`
             );
           removals.push(key);
         }
+
+        if (meta) {
+          paths[key] = this.getDescriptor(key, true);
+          roles[key] = _roles;
+        }
       }
 
-    if (this.debug) {
-      console.log(logs);
-      console.log(match);
-    }
+    if (this.debug) console.log(logs);
 
     for (var removal of removals) {
       setValueByPath(copy, removal, undefined);
     }
 
-    return [removeEmptyObjects(copy), removals] as [
-      data: DeepPartialNullable<Data>,
-      removals: string[]
-    ];
+    const result = (
+      meta === true
+        ? ([removeEmptyObjects(copy), removals, roles, paths] as [
+            data: DeepPartialNullable<Data>,
+            removals: string[],
+            roleTable: Record<string, string | string[] | undefined>,
+            pathTable: Record<string, string | string[] | undefined>
+          ])
+        : removeEmptyObjects(copy)
+    ) as Meta extends true
+      ? [
+          data: DeepPartialNullable<Data>,
+          removals: string[],
+          roleTable: Record<string, string | string[] | undefined>,
+          pathTable: Record<string, string | string[] | undefined>
+        ]
+      : DeepPartialNullable<Data>;
+
+    return result;
   }
 
   /** Gets the plain descriptor by path.
@@ -358,7 +457,7 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
 
     // SimpleDescriptor or VariableDescriptor
     if (typeof descriptor === "string") {
-      if (descriptor.startsWith("@")) {
+      if (descriptor[0] === "@") {
         const variable = descriptor as VariableDescriptorKey;
         return this.evalDescriptor(this.#vars[variable], user, type);
       }
@@ -396,7 +495,10 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
       }
 
       // SpecialDescriptor
-    } else {
+    } else if (
+      Object.hasOwn(descriptor, "d") &&
+      Object.hasOwn(descriptor, "roles")
+    ) {
       const matchingRoles = this.matchRoles(descriptor, user);
       if (matchingRoles.length > 0) return [descriptor.d, matchingRoles];
     }
@@ -407,7 +509,10 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
         console.log(
           `evalDescriptor() [strict] couldn't be evaluated, returning none.`
         );
-      return [SimpleDescriptorEnum.none, roles];
+
+      return roles
+        ? [SimpleDescriptorEnum.none, roles]
+        : [SimpleDescriptorEnum.none];
     }
     // Falls back to YES.
     return [SimpleDescriptorEnum.readWrite];
@@ -421,13 +526,9 @@ export class ACL<Data extends {} = {}, User extends GenericUser = GenericUser> {
 
   public static FromJson<
     Data extends {} = any,
-    User extends GenericUser = GenericUser
-  >(json: AclJson, strict = true) {
-    return new ACL<Data, User>(json, strict);
-  }
-
-  public static FromZod(zod: z.AnyZodObject) {
-    const json = FromZod(zod);
-    return new ACL(json);
+    User extends GenericUser = GenericUser,
+    Vars extends Variables = Variables
+  >(json: AclJson, options?: Options<Vars, User>) {
+    return new ACL<Data, User>(json, options);
   }
 }

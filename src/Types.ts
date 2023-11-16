@@ -44,12 +44,12 @@ export type SimpleDescriptor =
 
 export type SpecialDescriptor = {
   d: SimpleDescriptor | NeverDescriptor;
-  roles: Role | [Role, ...Role[]];
+  roles: [Role, ...Role[]];
 };
 
 export type ArrayDescriptor = [
-  SpecialDescriptor | SimpleDescriptor,
-  ...(SpecialDescriptor | SimpleDescriptor)[]
+  VariableDescriptorKey | SpecialDescriptor | SimpleDescriptor,
+  ...(VariableDescriptorKey | SpecialDescriptor | SimpleDescriptor)[]
 ];
 
 export type Descriptor =
@@ -71,3 +71,17 @@ export type Acl = {
 };
 
 export type GenericUser = { roles: string[] };
+
+export type Rebuild<T> = T extends (infer R)[]
+  ? Rebuild<R>[]
+  : T extends (...args: any[]) => any
+  ? T
+  : T extends object
+  ? {
+      [K in keyof T]: Rebuild<T[K]>;
+    }
+  : T;
+
+export type Variables = {
+  [key: `@${string}`]: Descriptor;
+};
