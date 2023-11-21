@@ -1,7 +1,7 @@
 {
-  "name": "acl",
-  "version": "0.0.0",
-  "description": "",
+  "name": "no-acl",
+  "version": "1.0.0",
+  "description": "A library for managing access control of nested object structures.",
   "main": "index.js",
   "scripts": {
     "test": "jest --watch",
@@ -12,9 +12,17 @@
     "pretest-web": "npm run build",
     "test-web": "http-server -d -c"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "access-control",
+    "nested-objects",
+    "security",
+    "acl"
+  ],
+  "author": "Benedikt Rey @ www.linkedin.com/in/toffels",
+  "license": "MIT",
+  "dependencies": {
+    "zod": "^3.22.4"
+  },
   "devDependencies": {
     "@types/jest": "^29.5.7",
     "@typescript-eslint/eslint-plugin": "^6.10.0",
@@ -30,7 +38,6 @@
     "ts-node": "^10.9.1",
     "typescript": "^5.2.2",
     "webpack": "^5.89.0",
-    "webpack-cli": "^5.1.4",
-    "zod": "^3.22.4"
+    "webpack-cli": "^5.1.4"
   }
 }
