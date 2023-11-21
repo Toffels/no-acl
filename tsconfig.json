@@ -1,14 +1,15 @@
 {
   "compilerOptions": {
     "target": "ESNext",
-    "module": "ESNext",
+    "module": "CommonJS",
     "strict": true,
     "skipLibCheck": true /* Skip type checking all .d.ts files. */,
     "forceConsistentCasingInFileNames": true /* Ensure that casing is correct in imports. */,
     "jsx": "react",
     "moduleResolution": "node",
     "esModuleInterop": true,
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "declaration": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "*.test.ts"]
