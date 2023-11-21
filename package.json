@@ -1,6 +1,6 @@
 {
   "name": "no-acl",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A library for managing access control of nested object structures.",
   "main": "index.js",
   "scripts": {
@@ -9,6 +9,10 @@
     "cloc": "git ls-files | xargs cloc",
     "build": "ts-node node_modules/webpack/bin/webpack --env target=web && ts-node node_modules/webpack/bin/webpack --env target=node",
     "postbuild": "ts-node post-build.ts",
+    "prepublish": "npm run build",
+    "publish": "cd ./dist && npm publish --access public",
+    "prepack": "npm run build",
+    "pack": "cd ./dist && npm pack",
     "build-web": "webpack --watch --env target=web",
     "pretest-web": "npm run build",
     "test-web": "http-server -d -c"

@@ -8,7 +8,7 @@
   "keywords": ["access-control", "nested-objects", "security", "acl"],
   "author": "Benedikt Rey @ www.linkedin.com/in/toffels",
   "license": "MIT",
-  "dependencies": {
+  "peerDependencies": {
     "zod": "^3.22.4"
   }
 }

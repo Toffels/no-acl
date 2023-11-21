@@ -25,6 +25,9 @@ module.exports = (env: any) => {
       libraryTarget: env.target === "node" ? "commonjs2" : "umd",
       globalObject: env.target === "node" ? "this" : "window",
     },
+    externals: {
+      zod: "zod",
+    },
     plugins: [
       // Add this plugin to copy package.json
       new CopyPlugin({

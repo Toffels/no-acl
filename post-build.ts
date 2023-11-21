@@ -115,4 +115,10 @@ const packageJson = fs.readFileSync(
 );
 const json = JSON.parse(packageJson);
 json.version = mainJson.version;
-json.dependencies = mainJson.dependencies;
+// json.dependencies = mainJson.dependencies;
+
+fs.writeFileSync(
+  path.join(__dirname, "dist", "package.json"),
+  JSON.stringify(json, null, 2),
+  "utf-8"
+);
