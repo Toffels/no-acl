@@ -19,8 +19,10 @@ describe("ACL.FromJson()", () => {
     expect(acl.original).toStrictEqual(acl2.original);
     expect(acl.toString()).toStrictEqual(acl2.toString());
 
-    expect(acl.acl).toStrictEqual(acl2.acl);
-    expect(getValueByPath(acl2.acl, "test_xx.roles.0")).toBeInstanceOf(RegExp);
+    expect(acl.toJson()).toStrictEqual(acl2.toJson());
+    expect(getValueByPath(acl2.original, "test_xx.roles.0")).toBeInstanceOf(
+      RegExp
+    );
   });
 
   it("should serialize regex properly", () => {
