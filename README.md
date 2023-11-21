@@ -1,7 +1,9 @@
-# ACL Toolkit
+# NO-ACL
+
+DISCLAIMER: Still in development!
 
 ## Introduction
-ACL (Access Control List) Toolkit is a powerful and flexible library for managing access control in JavaScript applications. It allows developers to define complex access rules and apply them to data structures, ensuring that users only access data they are authorized to see or modify.
+NO-ACL (Nested Object Access Control List) is a powerful and flexible library for managing access control in JavaScript applications. It allows developers to define complex access rules and apply them to data structures, ensuring that users only access data they are authorized to see or modify.
 
 ## Features
 - Role-based access control
@@ -10,18 +12,18 @@ ACL (Access Control List) Toolkit is a powerful and flexible library for managin
 - Wildcard support for path-based rules
 
 ## Installation
-Install the ACL Toolkit using npm:
+Install the NO-ACL using npm:
 
 ```bash
 # Example!!! Not the correct thing.
-npm install acl-toolkit
+npm install no-acl
 ```
 ## Usage
-Here's a basic example of how to use the ACL Toolkit:
+Here's a basic example of how to use the NO-ACL:
 
 ```ts
-import { ACL, SDE, GenericUser } from 'acl-toolkit';
-import type { GenericUser as IUser } from 'acl-toolkit';
+import { ACL, SDE, GenericUser } from 'no-acl';
+import type { GenericUser as IUser } from 'no-acl';
 
 // Using the shortcut.
 // SDE = SimpleDescriptorEnum;
