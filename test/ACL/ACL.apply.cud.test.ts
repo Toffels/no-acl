@@ -1,8 +1,8 @@
-import { ACL } from "../../src/ACL";
+import { AccessControlList } from "../../src/AccessControlList";
 import { GenericUser, SDE, SimpleDescriptorEnum } from "../../src/Types";
 import { getValueByPath } from "../../src/utils/utils";
 
-describe("ACL with new descriptor types (create, update, delete)", () => {
+describe("Acl with new descriptor types (create, update, delete)", () => {
   let user: GenericUser;
   let data: {
     resource: {
@@ -13,11 +13,11 @@ describe("ACL with new descriptor types (create, update, delete)", () => {
       deletedContent: any;
     };
   };
-  let acl: ACL<typeof data>;
+  let acl: AccessControlList<typeof data>;
 
   beforeEach(() => {
-    // Setup ACL with different descriptors including the new ones
-    acl = ACL.FromJson<typeof data>({
+    // Setup Acl with different descriptors including the new ones
+    acl = AccessControlList.FromJson<typeof data>({
       resource: SimpleDescriptorEnum.readWrite,
       "resource.id": SimpleDescriptorEnum.read,
       "resource.newContent": SimpleDescriptorEnum.create,

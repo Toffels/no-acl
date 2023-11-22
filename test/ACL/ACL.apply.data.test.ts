@@ -1,13 +1,6 @@
-import { ZodObject, z } from "zod";
-import { ACL } from "../../src/ACL";
-import {
-  ArrayDescriptor,
-  Descriptor,
-  GenericUser,
-  SDE,
-  SimpleDescriptorEnum,
-  SpecialDescriptor,
-} from "../../src/Types";
+import { z } from "zod";
+import { AccessControlList } from "../../src/AccessControlList";
+import { ArrayDescriptor, SDE, SpecialDescriptor } from "../../src/Types";
 import { Var, getValueByPath } from "../../src/utils/utils";
 import { A, a } from "../../src/zod/AssignAcl";
 
@@ -21,7 +14,7 @@ const simpleObjectB = A(z.object({ name: a("@read", z.string()) }), {
   vars: { "@read": SDE.read, roles: [] },
 });
 
-describe("ACL.apply() from Zod with realistic data.", () => {
+describe("Acl.apply() from Zod with realistic data.", () => {
   type User = { roles: string[]; groups?: string[] };
 
   const getRoles = (user: User) => [
@@ -203,7 +196,7 @@ describe("ACL.apply() from Zod with realistic data.", () => {
     });
 
     it("should have the acl property", () => {
-      expect(projectSchema.acl).toBeInstanceOf(ACL);
+      expect(projectSchema.acl).toBeInstanceOf(AccessControlList);
     });
 
     it("should have the descriptor property", () => {

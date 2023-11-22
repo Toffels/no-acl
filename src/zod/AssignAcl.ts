@@ -13,7 +13,7 @@ import {
   ZodRecordDef,
 } from "zod";
 import { Acl, Descriptor, GenericUser, Variables } from "../Types";
-import { ACL, Options } from "../ACL";
+import { AccessControlList, Options } from "../AccessControlList";
 
 //// EXPORT functionality. ////////////////////////////////////////////////////////
 
@@ -22,7 +22,7 @@ type ZodAcl<
   User extends GenericUser,
   Vars extends Variables = Variables
 > = Z & {
-  acl: ACL<z.infer<Z>, User, Vars>;
+  acl: AccessControlList<z.infer<Z>, User, Vars>;
 };
 
 declare module "zod" {
@@ -67,7 +67,7 @@ ZodType.prototype.A = function <
   Vars extends Variables
 >(this: Z, options?: Options<Vars, User>) {
   const json = getDescriptor(this, "", true);
-  const acl = ACL.FromJson<z.infer<Z>, User, Vars>(json, options);
+  const acl = AccessControlList.FromJson<z.infer<Z>, User, Vars>(json, options);
 
   Object.assign(this, { acl });
   return this as ZodAcl<Z, User, Vars>;
@@ -93,7 +93,7 @@ export function A<
   debug?: boolean
 ): ZodAcl<Z, User, Vars> {
   const json = getDescriptor(zod, "", true, debug);
-  const acl = ACL.FromJson<z.infer<Z>, User, Vars>(json, options);
+  const acl = AccessControlList.FromJson<z.infer<Z>, User, Vars>(json, options);
 
   Object.assign(zod, { acl });
   return zod as ZodAcl<Z, User, Vars>;

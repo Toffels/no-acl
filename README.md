@@ -127,7 +127,7 @@ Contributions to the ACL Toolkit are welcome. Please follow the standard procedu
 3. Submit a pull request with a detailed description of your changes -->
 
 ## License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE.txt) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE.md) file for details.
 
 ## Support
 This ACL Toolkit is currently under active development. While we strive to ensure stability and usability, please be aware that we cannot guarantee full functionality at this stage. Your feedback and contributions are highly valued and play a crucial role in improving this toolkit. However, please note that direct support and troubleshooting assistance may be limited at this time. For any feedback, suggestions, or potential issues, kindly open an issue in the GitHub repository.

@@ -1,9 +1,9 @@
-import { ACL } from "../../src/ACL";
+import { AccessControlList } from "../../src/AccessControlList";
 import { ArrayDescriptor, SimpleDescriptorEnum } from "../../src/Types";
 import { getWildCardPaths } from "../../src/utils/getWildCardPaths";
 
-describe("ACL.getDescriptor()", () => {
-  const acl = ACL.FromJson({
+describe("Acl.getDescriptor()", () => {
+  const acl = AccessControlList.FromJson({
     "test.descriptor": SimpleDescriptorEnum.readWrite,
     implicit: SimpleDescriptorEnum.read,
     "pre-defined-variable.descriptor": "@write",
@@ -53,8 +53,8 @@ describe("ACL.getDescriptor()", () => {
     });
   });
 
-  describe("ACL.getDescriptor() // wildcards", () => {
-    const acl = ACL.FromJson({
+  describe("Acl.getDescriptor() // wildcards", () => {
+    const acl = AccessControlList.FromJson({
       root: SimpleDescriptorEnum.readWrite,
       "root.*.test1": SimpleDescriptorEnum.read,
       "root.test2": [{ d: SimpleDescriptorEnum.never, roles: ["test2"] }],
@@ -151,7 +151,7 @@ describe("ACL.getDescriptor()", () => {
     }
 
     {
-      const acl = ACL.FromJson({
+      const acl = AccessControlList.FromJson({
         "*.l1": SimpleDescriptorEnum.write,
       });
 
@@ -164,8 +164,8 @@ describe("ACL.getDescriptor()", () => {
     }
   });
 
-  describe("ACL.getDescriptor() // wildcards 2", () => {
-    const acl = ACL.FromJson({
+  describe("Acl.getDescriptor() // wildcards 2", () => {
+    const acl = AccessControlList.FromJson({
       "a.*": SimpleDescriptorEnum.readWrite,
       "a.*.*": SimpleDescriptorEnum.readWrite,
       "b.test*": SimpleDescriptorEnum.readWrite,

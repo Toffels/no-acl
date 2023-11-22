@@ -1,10 +1,10 @@
-import { ACL } from "../../src/ACL";
+import { AccessControlList } from "../../src/AccessControlList";
 import { SimpleDescriptorEnum } from "../../src/Types";
 
 const TIME_THRESHOLD = 2;
 const NUMBER_OF_RUNS = 1000;
 
-describe("ACL.apply() benchmarking", () => {
+describe("Acl.apply() benchmarking", () => {
   let logs: string[] = [];
   let flushed = false;
 
@@ -18,10 +18,10 @@ describe("ACL.apply() benchmarking", () => {
     }
   });
 
-  const dataSets: [string, ACL, any, { roles: string[] }][] = [
+  const dataSets: [string, AccessControlList, any, { roles: string[] }][] = [
     [
       "Small  data",
-      ACL.FromJson({
+      AccessControlList.FromJson({
         "user.name": SimpleDescriptorEnum.read,
         "user.age": SimpleDescriptorEnum.read,
         "user.email": SimpleDescriptorEnum.never,
@@ -37,7 +37,7 @@ describe("ACL.apply() benchmarking", () => {
     ],
     [
       "Medium data",
-      ACL.FromJson({
+      AccessControlList.FromJson({
         "user.id": SimpleDescriptorEnum.read,
         "user.profile.name": SimpleDescriptorEnum.read,
         "user.profile.age": SimpleDescriptorEnum.read,
@@ -68,7 +68,7 @@ describe("ACL.apply() benchmarking", () => {
     ],
     [
       "Large  data",
-      ACL.FromJson({
+      AccessControlList.FromJson({
         "company.name": SimpleDescriptorEnum.read,
         "company.departments.*.name": SimpleDescriptorEnum.read,
         "company.departments.*.employees": [

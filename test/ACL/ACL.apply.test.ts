@@ -1,19 +1,20 @@
-import { ACL } from "../../src/ACL";
+import { AccessControlList } from "../../src/AccessControlList";
 import { GenericUser, SDE, SimpleDescriptorEnum } from "../../src/Types";
 import { getValueByPath } from "../../src/utils/utils";
 
 const user: GenericUser = { roles: [] };
 
-describe("ACL.apply() strict", () => {
-  const acl = ACL.FromJson<{ example: { dropped: string }; dropped_deep: any }>(
-    {
-      example: SimpleDescriptorEnum.rw,
-      "example.dropped": SimpleDescriptorEnum.none,
-      dropped: SimpleDescriptorEnum.none,
-      dropped_deep: SimpleDescriptorEnum.none,
-      "dropped_deep.no_need_to_be_dropped": SimpleDescriptorEnum.rw,
-    }
-  );
+describe("Acl.apply() strict", () => {
+  const acl = AccessControlList.FromJson<{
+    example: { dropped: string };
+    dropped_deep: any;
+  }>({
+    example: SimpleDescriptorEnum.rw,
+    "example.dropped": SimpleDescriptorEnum.none,
+    dropped: SimpleDescriptorEnum.none,
+    dropped_deep: SimpleDescriptorEnum.none,
+    "dropped_deep.no_need_to_be_dropped": SimpleDescriptorEnum.rw,
+  });
 
   beforeEach(() => {
     // Assure the logs are only spammed where needed.
@@ -63,7 +64,7 @@ describe("ACL.apply() strict", () => {
   });
 
   it("should remove all children when a parent is removed", () => {
-    const acl = ACL.FromJson<{
+    const acl = AccessControlList.FromJson<{
       obj: { a: number; b: number; c: number };
     }>({
       obj: SimpleDescriptorEnum.none,
@@ -95,7 +96,7 @@ describe("ACL.apply() strict", () => {
    */
   it("should stop searching for a truthy descriptor, if it hits never descriptor", () => {
     const user = { roles: ["test", "not-allowed-to"] };
-    const acl = ACL.FromJson<{
+    const acl = AccessControlList.FromJson<{
       value: string;
     }>({
       value: [
@@ -131,8 +132,8 @@ describe("ACL.apply() strict", () => {
   });
 });
 
-describe("ACL.apply() not strict", () => {
-  const acl = ACL.FromJson(
+describe("Acl.apply() not strict", () => {
+  const acl = AccessControlList.FromJson(
     {
       example: SimpleDescriptorEnum.rw,
       "example.dropped": SimpleDescriptorEnum.none,
@@ -166,9 +167,9 @@ describe("ACL.apply() not strict", () => {
   });
 });
 
-describe("ACL.apply() additional tests", () => {
+describe("Acl.apply() additional tests", () => {
   it("should correctly apply descriptors to paths with wildcards", () => {
-    const acl = ACL.FromJson<{ example: { dropped: any } }>({
+    const acl = AccessControlList.FromJson<{ example: { dropped: any } }>({
       "example.*": SimpleDescriptorEnum.read,
       "example.dropped.*": SimpleDescriptorEnum.none,
     });
@@ -185,7 +186,7 @@ describe("ACL.apply() additional tests", () => {
 
   it("should correctly handle multiple roles with different descriptors", () => {
     const user = { roles: ["admin", "user"] };
-    const acl = ACL.FromJson({
+    const acl = AccessControlList.FromJson({
       sensitive: [
         { d: SimpleDescriptorEnum.never, roles: ["user"] },
         { d: SimpleDescriptorEnum.readWrite, roles: ["admin"] },
@@ -203,7 +204,7 @@ describe("ACL.apply() additional tests", () => {
 
   it("should correctly handle multiple roles with different descriptors 2", () => {
     const user = { roles: ["admin", "user"] };
-    const acl = ACL.FromJson({
+    const acl = AccessControlList.FromJson({
       sensitive: [
         { d: SimpleDescriptorEnum.none, roles: ["user"] },
         { d: SimpleDescriptorEnum.readWrite, roles: ["admin"] },
@@ -221,7 +222,7 @@ describe("ACL.apply() additional tests", () => {
 
   it("should allow read but disallow write for a specific role", () => {
     const user = { roles: ["readOnlyUser"] };
-    const acl = ACL.FromJson({
+    const acl = AccessControlList.FromJson({
       config: [{ d: SimpleDescriptorEnum.read, roles: ["readOnlyUser"] }],
     });
 
@@ -241,7 +242,7 @@ describe("ACL.apply() additional tests", () => {
 
   it("should not remove unknown fields in non-strict mode", () => {
     const data = { unknownField: "value" };
-    const acl = ACL.FromJson(
+    const acl = AccessControlList.FromJson(
       {
         config: [{ d: SimpleDescriptorEnum.read, roles: ["readOnlyUser"] }],
       },
@@ -255,7 +256,7 @@ describe("ACL.apply() additional tests", () => {
 
   it("should correctly apply descriptors to array elements", () => {
     const user = { roles: ["readOnlyUser"] };
-    const acl = ACL.FromJson({
+    const acl = AccessControlList.FromJson({
       config: [{ d: SimpleDescriptorEnum.read, roles: ["readOnlyUser"] }],
       "config.0.canWrite": [
         { d: SimpleDescriptorEnum.never, roles: ["readOnlyUser"] },
@@ -270,7 +271,7 @@ describe("ACL.apply() additional tests", () => {
 
   it("should correctly apply descriptors to array elements if wildcard was used", () => {
     const user = { roles: ["readOnlyUser"] };
-    const acl = ACL.FromJson<{
+    const acl = AccessControlList.FromJson<{
       config: { canRead: number; canWrite: number }[];
     }>({
       config: [{ d: SimpleDescriptorEnum.read, roles: ["readOnlyUser"] }],
@@ -289,7 +290,7 @@ describe("ACL.apply() additional tests", () => {
 
   it("should resolve conflicts between multiple descriptors for the same path", () => {
     const user = { roles: ["canWrite", "readOnlyUser"] };
-    const acl = ACL.FromJson<{
+    const acl = AccessControlList.FromJson<{
       config: { canRead: number; canWrite: number };
     }>({
       config: [
@@ -324,14 +325,14 @@ describe("ACL.apply() additional tests", () => {
     }
   });
 
-  it("should handle nested wildcards in ACL paths correctly", () => {
+  it("should handle nested wildcards in Acl paths correctly", () => {
     const user = { roles: ["readOnlyUser"] };
     type T = {
       config: {
         deep: { deeper: { propertyA: 1; propertyB: 1; propertyC: 1 } };
       };
     };
-    const acl = ACL.FromJson<T>({
+    const acl = AccessControlList.FromJson<T>({
       config: { d: SimpleDescriptorEnum.read, roles: ["readOnlyUser"] },
       "config.*.*.propertyA": {
         d: SimpleDescriptorEnum.none,
@@ -375,7 +376,7 @@ describe("ACL.apply() additional tests", () => {
         deep: { deeper: { propertyA: 1; propertyB: 1; propertyC: 1 } };
       };
     };
-    const acl = ACL.FromJson<T>({
+    const acl = AccessControlList.FromJson<T>({
       config: { d: SimpleDescriptorEnum.read, roles: ["readOnlyUser"] },
     });
 
@@ -397,7 +398,7 @@ describe("ACL.apply() additional tests", () => {
       config: "config";
       config2: "config2";
     };
-    const acl = ACL.FromJson<T>({
+    const acl = AccessControlList.FromJson<T>({
       config: [
         { d: SimpleDescriptorEnum.read, roles: ["readOnlyUser"] },
         { d: SimpleDescriptorEnum.write, roles: ["writeOnlyUser"] },
@@ -435,8 +436,8 @@ describe("ACL.apply() additional tests", () => {
     }
   });
 
-  it("should handle nested wildcards in ACL paths correctly", () => {
-    const acl = ACL.FromJson({
+  it("should handle nested wildcards in Acl paths correctly", () => {
+    const acl = AccessControlList.FromJson({
       "config.*.settings.*.properties.*.cookie": SDE.r,
     });
 
@@ -467,7 +468,7 @@ describe("ACL.apply() additional tests", () => {
   });
 
   it("should make a copy of the input data", () => {
-    const acl = ACL.FromJson({
+    const acl = AccessControlList.FromJson({
       config: SDE.r,
     });
 
@@ -479,7 +480,7 @@ describe("ACL.apply() additional tests", () => {
   });
 
   it("should clean up empty objects", () => {
-    const acl = ACL.FromJson(
+    const acl = AccessControlList.FromJson(
       {
         config: SDE.never,
       },
@@ -495,7 +496,7 @@ describe("ACL.apply() additional tests", () => {
   });
 
   it("should clean up empty objects", () => {
-    const acl = ACL.FromJson(
+    const acl = AccessControlList.FromJson(
       {
         "config.b.c.d": SDE.never,
       },
@@ -514,7 +515,7 @@ describe("ACL.apply() additional tests", () => {
   });
 
   it("should correctly apply write-only descriptors to specified fields", () => {
-    const acl = ACL.FromJson({
+    const acl = AccessControlList.FromJson({
       "config.b.c.d": SDE.write,
       "config.b": SDE.read,
       "config.c": SDE.write,
@@ -537,7 +538,7 @@ describe("ACL.apply() additional tests", () => {
   });
 
   it("should properly handle array elements with specific role-based access", () => {
-    const acl = ACL.FromJson({
+    const acl = AccessControlList.FromJson({
       config: { d: SDE.rw, roles: ["any"] },
       "config.0.field": { d: SDE.rw, roles: ["test-0"] },
       "config.1.field": { d: SDE.rw, roles: ["test-1"] },
@@ -585,7 +586,7 @@ describe("ACL.apply() additional tests", () => {
   });
 
   it("should validate the behavior when no roles are assigned to a user", () => {
-    const acl = ACL.FromJson({
+    const acl = AccessControlList.FromJson({
       config: SDE.rw,
       "config.0.field": { d: SDE.rw, roles: ["test-0"] },
       "config.1.field": { d: SDE.rw, roles: ["test-1"] },
@@ -617,8 +618,8 @@ describe("ACL.apply() additional tests", () => {
       },
     };
 
-    // Define an ACL with 'readWrite' descriptors and a restricted field
-    const acl = ACL.FromJson({
+    // Define an Acl with 'readWrite' descriptors and a restricted field
+    const acl = AccessControlList.FromJson({
       "config.setting1": SimpleDescriptorEnum.readWrite,
       "config.setting2": SimpleDescriptorEnum.readWrite,
       "config.restrictedSetting": SimpleDescriptorEnum.none, // restricted field
@@ -661,7 +662,7 @@ describe("ACL.apply() additional tests", () => {
       },
     };
 
-    const acl = ACL.FromJson({
+    const acl = AccessControlList.FromJson({
       "section.publicInfo": SimpleDescriptorEnum.read,
       "section.privateInfo": [
         { d: SimpleDescriptorEnum.read, roles: ["admin"] },
@@ -682,7 +683,7 @@ describe("ACL.apply() additional tests", () => {
     const user = { roles: ["editor", "viewer"] };
     const data = { content: "Editable content" };
 
-    const acl = ACL.FromJson({
+    const acl = AccessControlList.FromJson({
       content: [
         { d: SimpleDescriptorEnum.read, roles: ["viewer"] },
         { d: SimpleDescriptorEnum.write, roles: ["editor"] },
@@ -706,7 +707,7 @@ describe("ACL.apply() additional tests", () => {
     const user = { roles: ["editor", "viewer"] };
     const data = { content: "Editable content" };
 
-    const acl = ACL.FromJson({
+    const acl = AccessControlList.FromJson({
       content: [
         { d: SimpleDescriptorEnum.read, roles: ["viewer"] },
         { d: SimpleDescriptorEnum.write, roles: ["editor"] },

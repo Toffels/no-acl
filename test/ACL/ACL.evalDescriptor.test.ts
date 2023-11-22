@@ -1,9 +1,9 @@
-import { ACL } from "../../src/ACL";
+import { AccessControlList } from "../../src/AccessControlList";
 import { ArrayDescriptor, SimpleDescriptorEnum } from "../../src/Types";
 
-describe("ACL.evalDescriptor()", () => {
+describe("Acl.evalDescriptor()", () => {
   const user = { roles: ["test-role"] };
-  const acl = ACL.FromJson({});
+  const acl = AccessControlList.FromJson({});
 
   const evalDescriptor = acl["evalDescriptor"].bind(acl);
 

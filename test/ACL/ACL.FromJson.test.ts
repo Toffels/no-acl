@@ -1,20 +1,20 @@
-import { ACL } from "../../src/ACL";
+import { AccessControlList } from "../../src/AccessControlList";
 import { SimpleDescriptorEnum, SpecialDescriptor } from "../../src/Types";
 import { getValueByPath } from "../../src/utils/utils";
 
-describe("ACL.FromJson()", () => {
-  const acl = ACL.FromJson({
+describe("Acl.FromJson()", () => {
+  const acl = AccessControlList.FromJson({
     "@custom-variable": SimpleDescriptorEnum.rw,
     example: "@custom-variable",
   });
 
   it("should parse regex role check accordingly", () => {
-    const acl = ACL.FromJson({
+    const acl = AccessControlList.FromJson({
       test_xx: { d: SimpleDescriptorEnum.rw, roles: [/any/] },
     });
 
     const json = acl.toJson();
-    const acl2 = ACL.FromJson(json);
+    const acl2 = AccessControlList.FromJson(json);
 
     expect(acl.original).toStrictEqual(acl2.original);
     expect(acl.toString()).toStrictEqual(acl2.toString());
@@ -26,7 +26,7 @@ describe("ACL.FromJson()", () => {
   });
 
   it("should serialize regex properly", () => {
-    const acl = ACL.FromJson({
+    const acl = AccessControlList.FromJson({
       test_xx: { d: SimpleDescriptorEnum.rw, roles: [/any/] },
     });
 
@@ -37,7 +37,7 @@ describe("ACL.FromJson()", () => {
     ]);
   });
 
-  describe("ACL.toString()", () => {
+  describe("Acl.toString()", () => {
     it("should return a string", () => {
       const toString = acl.toString();
       expect(typeof toString).toBe("string");
@@ -55,7 +55,7 @@ describe("ACL.FromJson()", () => {
     });
   });
 
-  describe("ACL.toString(true)", () => {
+  describe("Acl.toString(true)", () => {
     it("does not contains the variable, but evaluates it", () => {
       const toString = acl.toString(true);
       expect(toString.length).toBeGreaterThan(0);
@@ -68,7 +68,7 @@ describe("ACL.FromJson()", () => {
     });
   });
 
-  describe("ACL.toJson()", () => {
+  describe("Acl.toJson()", () => {
     it("should return a object", () => {
       const toString = acl.toJson();
       expect(typeof toString).toBe("object");
@@ -83,7 +83,7 @@ describe("ACL.FromJson()", () => {
     });
   });
 
-  describe("ACL.toJson(true)", () => {
+  describe("Acl.toJson(true)", () => {
     it("does not contains the variable, but evaluates it", () => {
       const toJson = acl.toJson(true);
       expect(toJson).toStrictEqual({
@@ -92,7 +92,7 @@ describe("ACL.FromJson()", () => {
     });
   });
 
-  describe("ACL.original()", () => {
+  describe("Acl.original()", () => {
     it("should return the original input", () => {
       expect(typeof acl.original).toBe("object");
       expect(acl.original).toStrictEqual({

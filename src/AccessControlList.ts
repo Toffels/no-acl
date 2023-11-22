@@ -40,7 +40,7 @@ export type Options<
   strict?: boolean;
 };
 
-export class ACL<
+export class AccessControlList<
   Data extends {} = {},
   User extends GenericUser = GenericUser,
   Vars extends Variables = Variables
@@ -141,7 +141,7 @@ export class ACL<
     }
 
     const result = { ...this.#vars, ...this.#acl };
-    Object.keys(ACL.#DefaultVars).forEach((key) => {
+    Object.keys(AccessControlList.#DefaultVars).forEach((key) => {
       delete result[key];
     });
 
@@ -193,7 +193,7 @@ export class ACL<
     this.#aclJson = aclJson;
     this.#acl = {};
     this.#vars = {
-      ...ACL.#DefaultVars,
+      ...AccessControlList.#DefaultVars,
     };
 
     Object.entries(options?.vars ?? {}).forEach(([key, des]) => {
@@ -529,6 +529,6 @@ export class ACL<
     User extends GenericUser = GenericUser,
     Vars extends Variables = Variables
   >(json: AclJson, options?: Options<Vars, User>) {
-    return new ACL<Data, User>(json, options);
+    return new AccessControlList<Data, User>(json, options);
   }
 }

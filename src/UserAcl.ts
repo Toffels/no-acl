@@ -1,10 +1,10 @@
-import { ACL } from "./ACL";
+import { AccessControlList } from "./AccessControlList";
 import { GenericUser } from "./Types";
 
-export class UserACL<
+export class UserAcl<
   Data extends {} = any,
   User extends GenericUser = { roles: string[] },
-  Acl extends ACL<Data, User> = ACL<Data, User>
+  Acl extends AccessControlList<Data, User> = AccessControlList<Data, User>
 > {
   public readonly user: User;
   public readonly acl: Acl;
