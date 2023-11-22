@@ -1,6 +1,7 @@
 export * as z from "zod";
 
 export { AccessControlList } from "./AccessControlList";
+export { AccessControlList as Acl } from "./AccessControlList";
 export { UserAcl } from "./UserAcl";
 export * as utils from "./utils/utils";
 export { Var } from "./utils/utils";

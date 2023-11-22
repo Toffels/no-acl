@@ -1,37 +1,50 @@
 # NO-ACL
+## Nested Object - Access Control List
 
-DISCLAIMER: Still in development!
-
-## Introduction
-NO-ACL (Nested Object Access Control List) is a powerful and flexible library for managing access control in JavaScript applications. It allows developers to define complex access rules and apply them to data structures, ensuring that users only access data they are authorized to see or modify.
-
-## Features
-- Role-based access control
-- Support for nested object structures
-- Flexible and extensible rule definition
-- Wildcard support for path-based rules
+Disclaimer: Under construction.
 
 ## Installation
 Install the NO-ACL using npm:
 
 ```bash
-# Example!!! Not the correct thing.
 npm install no-acl
 ```
+
+
+## Introduction
+
+NO-ACL (Nested Object Access Control List) is a JavaScript library that offers a novel approach to managing access control in applications. Differing from traditional ACLs, which typically secure entire resources, NO-ACL focuses on providing detailed control at the level of individual fields within nested objects. This approach enables the definition of precise access rules, ensuring that users have the appropriate level of access to data they interact with. Designed for applications with complex data structures, NO-ACL presents a secure and flexible method for handling field-level access control, making it a valuable tool for developers seeking to enhance data security and integrity.
+
+
+## Features
+
+NO-ACL offers a range of features designed for effective and efficient access control management:
+
+- **Role-Based Access Control (RBAC)**: Implement access control policies based on user roles, allowing for streamlined and organized management of permissions across different levels of users.
+
+- **Support for Nested Object Structures**: Specifically tailored to handle complex nested objects, ensuring that access control can be applied even in intricate data hierarchies.
+
+- **Flexible and Extensible Rule Definition**: Create custom rules that cater to the specific needs of your application. NO-ACL's flexible system allows for the tailoring of rules to suit various scenarios and requirements.
+
+- **Wildcard Support for Path-Based Rules**: Utilize wildcards in specifying paths for access control, enabling broader and more dynamic rule application without the need for defining each path explicitly.
+
+- **Regex-Role Evaluation**: Offers advanced role evaluation capabilities using regular expressions. This feature allows for more dynamic and complex role definitions, enhancing the flexibility of access control configurations.
+
+- **Serialization**: Enables the serialization of access control lists, facilitating easy storage, transfer, and reconstruction of ACLs. This feature is particularly useful for maintaining consistent access control policies across different parts of an application or in different environments.
+
+- **Zod Extension for 'In-Place ACL Definition'**: Integrates seamlessly with Zod, one of the leading validation libraries, allowing for 'in-place' access control definitions. This extension simplifies the process of defining access rules within the schema validation, streamlining the workflow and ensuring that access control is tightly coupled with data validation.
+
 ## Usage
 Here's a basic example of how to use the NO-ACL:
 
 ```ts
-import { ACL, SDE, GenericUser } from 'no-acl';
+import { AccessControlList as Acl, SimpleDescriptorEnum as SDE } from 'no-acl';
 import type { GenericUser as IUser } from 'no-acl';
 
-// Using the shortcut.
-// SDE = SimpleDescriptorEnum;
-
-// Define your ACL rules
-const acl = ACL.FromJson({
+// Define your Acl rules
+const acl = Acl.FromJson({
   'user.profile.name': SDE.read,
-  'user.profile.email': [{ d: SDE.read, roles: ['admin'] }]
+  'user.profile.email': [{ d: SDE.read, roles: ['admin'] }, SDE.none]
 });
 
 // Create a user and data object
@@ -45,8 +58,8 @@ const data = {
   }
 };
 
-// Apply the ACL
-const [result] = acl.read(data, user);
+// Apply the Acl
+const result = acl.read(data, user);
 
 // Output depends on user roles
 console.log(result);
@@ -62,11 +75,43 @@ console.log(result);
 // The email field in this case is removed from the profile object, since the user has no admin role.
 ```
 
+## Zod Usage
+```ts
+import { AccessControlList as Acl, SimpleDescriptorEnum as SDE } from 'no-acl';
+import type { GenericUser as IUser } from 'no-acl';
+
+const DataSchema = z.object({
+  user: z.object({
+    // Implicit fallback to parent.
+    name: z.string(),
+    email: z.string().a("@admin_read"),
+    dict: z.record(z.string(), z.string()).a("@rw")
+    // Implicit read-write variable
+  }).assignDescriptor("@rw") // Shorthand a
+// Create Acl
+}).ZAcl({ // Shorthand: A
+  // define reusable variables for the acl
+  vars: {
+    // Variable for ArrayDescriptor
+    "@admin_read": [
+      // SpecificDescriptor
+      { 
+        d: SDE.read,
+        // Matching role === "admin"
+        roles: ["admin"]
+      },
+      // SimpleDescriptor
+      SDE.none
+    ]
+  }
+})
+```
+
 More complex examples to follow.
 
 ## API Reference
-
-### `ACL.FromJson(json: object): ACL`
+TODO
+<!-- ### `ACL.FromJson(json: object): ACL`
 Creates an ACL instance from a JSON object. This method allows defining access control lists with various descriptors and supports the use of custom variables and regular expressions for role checks.
 
 - **Parameters**:
@@ -90,33 +135,7 @@ Returns a string representation of the ACL rules. This is useful for debugging o
 ### `ACL.original: object`
 Provides access to the original input object used to create the ACL instance. This is useful for retrieving the unmodified state of the ACL rules.
 
-- **Returns**: The original input object used to create the ACL instance.
-
-### Special Features:
-- **Custom Variables**: Define reusable variables within your ACL rules for cleaner and more maintainable configurations.
-- **Regular Expression Role Checks**: Use regular expressions for dynamic and flexible role checking in your ACL rules.
-- **Serialization and Deserialization**: Easily convert your ACL instances to and from JSON for storage or transmission.
-- **String Representation**: Get a human-readable string representation of your ACL rules, with an option to evaluate or preserve custom variables.
-
-## Example Usage
-```ts
-import { ACL, SimpleDescriptorEnum as SDE } from 'acl-toolkit';
-
-// Define ACL rules with a custom variable and regex role check
-const acl = ACL.FromJson({
-  "@custom-variable": SDE.readWrite,
-  "user.access": { d: "@custom-variable", roles: [/admin|moderator/] }
-});
-
-// Convert ACL to JSON and back to an object
-const json = acl.toJson();
-const aclFromJson = ACL.FromJson(json);
-
-// String representation of ACL
-const aclString: string = acl.toString();
-console.log(aclString);
-
-``` 
+- **Returns**: The original input object used to create the ACL instance. -->
 
 
 <!-- ## Contributing
@@ -128,44 +147,4 @@ Contributions to the ACL Toolkit are welcome. Please follow the standard procedu
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE.md) file for details.
-
-## Support
-This ACL Toolkit is currently under active development. While we strive to ensure stability and usability, please be aware that we cannot guarantee full functionality at this stage. Your feedback and contributions are highly valued and play a crucial role in improving this toolkit. However, please note that direct support and troubleshooting assistance may be limited at this time. For any feedback, suggestions, or potential issues, kindly open an issue in the GitHub repository.
-
-
-# Does it need another one?
-Probably not, but I had this idea in mind, before researching and thought it would be an interesting tech challenge to my self.
-I ended up using it in my projects at Arcware and wanted to re-write it in a more generic way.
-Also I added a bunch of features and rethought some concepts.
-
-## Alternatives:
-Please consider these alternatives:
-
-#### Casbin
-Description: An authorization library that supports various access control models like ACL, RBAC, ABAC.
-Languages: Available in multiple languages, including a JavaScript version.
-Features: It is very flexible and supports complex access control scenarios.
-Website: [Casbin](https://casbin.org/)
-
-#### AccessControl
-Description: A role and attribute-based access control library for Node.js.
-Features: It offers a fluent API to define roles, resources, and permissions.
-NPM Page: [AccessControl](https://www.npmjs.com/package/accesscontrol)
-
-#### node_acl
-Description: A simple ACL for Node.js, supports various backends like memory, Redis, and MongoDB.
-Features: Provides straightforward methods to define roles and permissions.
-NPM Page: [node_acl](https://www.npmjs.com/package/acl)
-
-#### RBAC
-Description: A minimalistic RBAC (Role Based Access Control) implementation in Node.js.
-Features: Simplistic and lightweight, suitable for small to medium projects.
-NPM Page: [RBAC](https://www.npmjs.com/package/rbac)
-
-#### Permit
-Description: An authorization library for building secure and scalable user permissions systems.
-Features: Offers a clean and promise-based API.
-NPM Page: [Permit](https://www.npmjs.com/package/permit)
-
-## TODOs
-Further features and plans to be found [here](TODO.md).
+ 
