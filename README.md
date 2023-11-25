@@ -107,36 +107,206 @@ const DataSchema = z.object({
 })
 ```
 
-More complex examples to follow.
+## Real-Life Example: Role-Based Access Control in an Online Learning Platform
+This code illustrates how this ACL system can manage access to course data based on user roles in an online learning platform context. It demonstrates the flexibility and capability of the ACL in handling complex access control scenarios.
+- We define ACL variables for different roles (administrator, instructor).
+- We create a Zod schema for a course with specific access controls for each field.
+- We apply the ACL to the course data for different user roles and log the views that each role would have.
+
+It get's even more interesting in scenarios, where you have big and deep settings structure and want new fields to be only usable by Admins until the feature releases. However, here's a simple example:
+
+```ts
+// Defining ACL variables for role-based access
+const vars: Variables = {
+  "@adminWrite": { d: SDE.write, roles: ["administrator"] },
+  "@adminRead": { d: SDE.read, roles: ["administrator"] },
+  "@adminRW": { d: SDE.readWrite, roles: ["administrator"] },
+  "@instructorWrite": { d: SDE.write, roles: ["instructor"] },
+  "@instructorRead": { d: SDE.read, roles: ["instructor"] },
+};
+
+// Function to extract roles from a user
+// This is the default function, if none is specified, however it can be customized to map any user property to a role map as needed.
+// For example to use groups, email-address domain, name or properties. Just map them into a role-pattern you like and setup your descriptors accordingly.
+const getRoles = (user: { roles: string[] }) => user.roles;
+
+// ACL schema for a course
+const courseSchema = z.object({
+  title: z.string().a(["@read", "@instructorWrite", "@adminWrite"]),
+  description: z.string().a(["@read", "@instructorWrite", "@adminWrite"]),
+  seats: z.object({
+    max: z.number().int().a(["@adminRW", "@instructorRead"]),
+  }),
+  students: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      grades: z.array(z.number()).a(["@instructorRead"]),
+      attendance: z.number().a(["@instructorRead"]),
+    })
+  ).a(["@read"]),
+}).A({ vars, getRoles });
+
+// Example course data
+let courseData = {
+  title: "How to use no-acl?",
+  description: "This course will teach you how to use the no-acl library.",
+  seats: {
+    max: 10,
+  },
+  students: [
+    {
+      id: "001",
+      name: "Melon Eusk",
+      grades: [95, 76, 87],
+      attendance: 90,
+    },
+    {
+      id: "002",
+      name: "Gill Bates",
+      grades: [89, 67, 91],
+      attendance: 85,
+    },
+    {
+      id: "003",
+      name: "Beff Jezos",
+      grades: [80, 90, 67],
+      attendance: 81,
+    },
+  ],
+};
+
+// Example usage
+const adminUser = { roles: ["administrator"] };
+const instructorUser = { roles: ["instructor"] };
+const studentUser = { roles: ["student"] };
+
+// Applying ACL for different user roles
+const adminView = courseSchema.acl.read(courseData, adminUser);
+// const adminView = courseSchema.acl.write(courseData, adminUser);
+const instructorView = courseSchema.acl.read(courseData, instructorUser);
+// const instructorView = courseSchema.acl.write(courseData, instructorUser);
+const studentView = courseSchema.acl.read(courseData, studentUser);
+// const studentView = courseSchema.acl.write(courseData, studentUser);
+
+// Outputs:
+// admin read
+{
+  title: 'How to use no-acl?',
+  description: 'This course will teach you, how to use the no-acl library.',
+  seats: { max: 10 },
+  students: [
+    { id: '001', name: 'Melon Eusk' },
+    { id: '002', name: 'Gill Bates' },
+    { id: '003', name: 'Beff Jezos' }
+  ]
+}
+// admin write
+{
+  title: 'How to use no-acl?',
+  description: 'This course will teach you, how to use the no-acl library.',
+  seats: { max: 10 }
+}
+
+//  instructor read
+{
+  title: 'How to use no-acl?',
+  description: 'This course will teach you, how to use the no-acl library.',
+  seats: { max: 10 },
+  students: [
+    { id: '001', name: 'Melon Eusk', grades: [Array], attendance: 90 },
+    { id: '002', name: 'Gill Bates', grades: [Array], attendance: 85 },
+    { id: '003', name: 'Beff Jezos', grades: [Array], attendance: 81 }
+  ]
+}
+// instructor write
+{
+  title: 'How to use no-acl?',
+  description: 'This course will teach you, how to use the no-acl library.'
+}
+
+// student read
+{
+  title: 'How to use no-acl?',
+  description: 'This course will teach you, how to use the no-acl library.',
+  students: [
+    { id: '001', name: 'Melon Eusk' },
+    { id: '002', name: 'Gill Bates' },
+    { id: '003', name: 'Beff Jezos' }
+  ]
+}
+// student write 
+{}
+``` 
+
+#### Outcome
+- Instructors can manage all aspects of the course, including student performance data.
+- Students can access course materials and submit assignments but cannot see other students' data.
+- Administrators have comprehensive access for oversight and management purposes.
+
+This expanded example demonstrates the nuanced application of ACL in an online learning platform, showcasing how different roles interact with the system and the level of access granted to each.
 
 ## API Reference
-TODO
-<!-- ### `ACL.FromJson(json: object): ACL`
-Creates an ACL instance from a JSON object. This method allows defining access control lists with various descriptors and supports the use of custom variables and regular expressions for role checks.
 
-- **Parameters**:
-  - `json`: An object containing ACL rules. Supports custom variables and regular expressions.
-- **Returns**: An instance of the ACL class.
+### `AccessControlList` Class
+This class is the core of the module, providing functionalities for managing access control lists.
 
-### `ACL.toJson(evaluateVariables?: boolean): object`
-Converts the ACL instance back to a JSON object. This can be used to serialize the ACL rules.
+#### Constructor
+It's private to be only accessed by the `FromJson` static method.
 
-- **Parameters**:
-  - `evaluateVariables` (optional): A boolean indicating whether custom variables in the ACL should be evaluated or kept as references.
-- **Returns**: A JSON object representing the ACL rules.
+#### Generic Types
+- `Data`: Represents the data structure being controlled.
+- `User`: The user type with access to the data.
+- `Vars`: The variables used within the ACL.
 
-### `ACL.toString(evaluateVariables?: boolean): string`
-Returns a string representation of the ACL rules. This is useful for debugging or logging the current state of the ACL.
+### AccessControlList.`FromJson`
+- `FromJson(json: AclJson, options?: Options<Vars, User>)`: Creates an instance of `AccessControlList` from a JSON object.
 
-- **Parameters**:
-  - `evaluateVariables` (optional): A boolean indicating whether custom variables in the ACL should be evaluated or kept as references.
-- **Returns**: A string representation of the ACL rules.
+#### `Options` Type
 
-### `ACL.original: object`
-Provides access to the original input object used to create the ACL instance. This is useful for retrieving the unmodified state of the ACL rules.
+The `Options` type is a generic type used to configure instances of the `AccessControlList` class. It provides flexibility in setting up the access control logic and user-role relationships. It has the following structure:
 
-- **Returns**: The original input object used to create the ACL instance. -->
+```typescript
+export type Options<
+  Vars extends Variables = Variables,
+  User extends GenericUser = GenericUser
+> = {
+  vars?: Vars;
+  getRoles?: (user: User) => string[];
+  strict?: boolean;
+};
 
+const options: Options<MyVarsType, MyUserType> = {
+  vars: {
+    // Custom variables for ACL
+  },
+  getRoles: (user) => {
+    // Custom logic to retrieve user roles
+    return user.customRoleProperty;
+  },
+  strict: true
+};
+
+const acl = AccessControlList.FromJson(aclJson, options);
+
+```
+
+#### Methods
+- `toString(flush: boolean)`: Returns a string representation of the ACL.
+  - `flush`: Boolean to determine if variables should be evaluated.
+- `toJson(flush: boolean)`: Returns a JSON representation of the ACL.
+  - `flush`: Boolean to determine if variables should be evaluated.
+- `read(data: Data, user: User)`: Filters the data based on read permissions for the user.
+- `write(data: Data, user: User)`: Filters the data based on write permissions for the user.
+- `create(data: Data, user: User)`: Filters the data based on create permissions for the user.
+- `update(data: Data, user: User)`: Filters the data based on update permissions for the user.
+- `delete(data: Data, user: User)`: Filters the data based on delete permissions for the user.
+- `apply(data: Data, user: User, type: SimpleDescriptorEnum, meta: Meta)`: Applies the specified ACL type to the data for the given user.
+  - `data`: The data object to modify.
+  - `user`: The user object to determine permissions.
+  - `type`: The type of ACL to apply (read, write, create, update, delete).
+  - `meta`: Additional metadata for ACL application.
+- `getRoles(user: User)`: Retrieves roles for the given user.
 
 <!-- ## Contributing
 Contributions to the ACL Toolkit are welcome. Please follow the standard procedure for contributing to open source projects:

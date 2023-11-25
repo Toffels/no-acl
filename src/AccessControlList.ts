@@ -296,6 +296,8 @@ export class AccessControlList<
 
     if (this.debug) console.log("flatDataKeys", flatDataKeys);
 
+    // console.log("aclKeys", aclKeys);
+
     for (var keys of [aclKeys, flatDataKeys])
       for (var key of keys) {
         const matchingKeyInRemovals = removals.find(

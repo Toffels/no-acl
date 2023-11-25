@@ -11,6 +11,7 @@ import {
   ZodDefaultDef,
   ZodType,
   ZodRecordDef,
+  ZodArrayDef,
 } from "zod";
 import { Acl, Descriptor, GenericUser, Variables } from "../Types";
 import { AccessControlList, Options } from "../AccessControlList";
@@ -113,8 +114,6 @@ function findShape<Z extends z.ZodType>(zod: Z) {
     return zod.unwrap();
   } else if (zod instanceof ZodEffects) {
     return zod._def.schema;
-  } else if (zod instanceof ZodArray) {
-    return zod._def.type;
   } else if (zod instanceof ZodDefault) {
     return zod._def.innerType;
   }
@@ -174,9 +173,15 @@ function getDescriptor<Z extends z.ZodType, D extends Descriptor>(
     const result = {};
     Object.assign(result, ...optionDescriptors, acl);
     return result;
-  }
+  } else if (zod instanceof ZodArray) {
+    const innerType = (zod._def as ZodArrayDef).type;
+    const wildcardPath = createPath(path, "*");
+    acl[wildcardPath] = innerType.descriptor ?? zod.descriptor;
 
-  if (zod instanceof ZodRecord) {
+    const valueDefinition = getDescriptor(innerType, wildcardPath, deep, debug);
+
+    Object.assign(acl, valueDefinition);
+  } else if (zod instanceof ZodRecord) {
     acl[path] = zod.descriptor;
 
     const wildcardPath = createPath(path, "*");
@@ -191,9 +196,7 @@ function getDescriptor<Z extends z.ZodType, D extends Descriptor>(
     );
 
     Object.assign(acl, valueDefinition);
-  }
-
-  if (zod instanceof ZodUnion) {
+  } else if (zod instanceof ZodUnion) {
     const optionDescriptors = Object.keys(zod._def.options).map((o) =>
       getDescriptor(zod._def.options[o] as any, path, deep, debug)
     );
@@ -210,9 +213,7 @@ function getDescriptor<Z extends z.ZodType, D extends Descriptor>(
     const result = {};
     Object.assign(result, ...optionDescriptors, acl);
     return result;
-  }
-
-  if ((zod?._def as ZodDefaultDef)?.innerType) {
+  } else if ((zod?._def as ZodDefaultDef)?.innerType) {
     const def = (zod._def as ZodDefaultDef)
       .innerType as ZodDefaultDef["innerType"];
 

@@ -35,6 +35,7 @@ describe("flatten", () => {
       a: "hello",
       "b.c": null, // assuming null should be flattened as well
       "b.d": false,
+      e: [1, 2, 3],
       "e.0": 1,
       "e.1": 2,
       "e.2": 3,
@@ -45,9 +46,11 @@ describe("flatten", () => {
   it("should handle a straight array as input", () => {
     const arrayInput = [1, 2, { a: 3, b: [4, 5] }];
     const expectedOutput = {
+      "": [1, 2, { a: 3, b: [4, 5] }],
       "0": 1,
       "1": 2,
       "2.a": 3,
+      "2.b": [4, 5],
       "2.b.0": 4,
       "2.b.1": 5,
     };
@@ -63,10 +66,12 @@ describe("flatten", () => {
       },
     };
     const expectedOutput = {
+      numbers: [1, 2, 3],
       "numbers.0": 1,
       "numbers.1": 2,
       "numbers.2": 3,
       "details.name": "Test",
+      "details.values": [4, 5, 6],
       "details.values.0": 4,
       "details.values.1": 5,
       "details.values.2": 6,

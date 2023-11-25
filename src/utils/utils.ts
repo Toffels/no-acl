@@ -36,6 +36,8 @@ export function flatten<Obj extends GenericObject>(
   // Initialize the result object
   const result: GenericObject<BaseType> = {};
 
+  if (Array.isArray(obj)) result[path] = obj as any;
+
   for (let key of keys) {
     // Changed 'in' to 'of' to correctly iterate over keys
     // Construct the new key based on the path

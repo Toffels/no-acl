@@ -126,6 +126,8 @@ describe("ZAcl", () => {
       boolean: "@r",
       nullish: "@r",
       array: "@r",
+      "array.*": "@r",
+      "array.*.name": "@r",
       object: "@r",
       "object.nested": "@r",
       "object.anotherNumber": "@r",
