@@ -8,6 +8,7 @@
   "keywords": ["access-control", "nested-objects", "security", "acl"],
   "author": "Benedikt Rey @ www.linkedin.com/in/toffels",
   "license": "MIT",
+  "repository": { "type": "git", "url": "https://github.com/Toffels/no-acl" },
   "peerDependencies": {
     "zod": "^3.22.4"
   }
