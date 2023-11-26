@@ -1,7 +1,7 @@
 # NO-ACL
 ## Nested Object - Access Control List
 
-Disclaimer: Under construction.
+Disclaimer: *Under construction.*
 
 ## Installation
 Install the NO-ACL using npm:
@@ -134,9 +134,11 @@ const getRoles = (user: { roles: string[] }) => user.roles;
 const courseSchema = z.object({
   title: z.string().a(["@read", "@instructorWrite", "@adminWrite"]),
   description: z.string().a(["@read", "@instructorWrite", "@adminWrite"]),
-  seats: z.object({
-    max: z.number().int().a(["@adminRW", "@instructorRead"]),
-  }),
+  seats: z
+    .object({
+      max: z.number().int().a(["@adminRW", "@instructorRead"]),
+    })
+    .a(["@read", "@adminRW"]),
   students: z.array(
     z.object({
       id: z.string(),

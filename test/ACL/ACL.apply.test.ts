@@ -170,6 +170,7 @@ describe("Acl.apply() not strict", () => {
 describe("Acl.apply() additional tests", () => {
   it("should correctly apply descriptors to paths with wildcards", () => {
     const acl = AccessControlList.FromJson<{ example: { dropped: any } }>({
+      example: SimpleDescriptorEnum.read,
       "example.*": SimpleDescriptorEnum.read,
       "example.dropped.*": SimpleDescriptorEnum.none,
     });
@@ -450,11 +451,17 @@ describe("Acl.apply() additional tests", () => {
       },
     };
 
-    const [applied, removals] = acl.apply(data, user, SDE.read, true);
-
-    expect(removals).toContain(
+    const [applied, removals, roleTable, pathTable] = acl.apply(
+      data,
+      user,
+      SDE.read,
+      true
+    );
+    // This won't be in, since on "config" level it would be cropped already.
+    expect(removals).not.toContain(
       "config.anyOther.settings2.any.properties.any.cookie"
     );
+    expect(removals).toContain("config");
     // This path should not exist.
     expect(
       getValueByPath(
@@ -464,7 +471,7 @@ describe("Acl.apply() additional tests", () => {
     ).toBeUndefined();
     expect(
       getValueByPath(applied, "config.any.settings.any.properties.any.cookie")
-    ).toBe(3);
+    ).toBeUndefined();
   });
 
   it("should make a copy of the input data", () => {
@@ -519,6 +526,7 @@ describe("Acl.apply() additional tests", () => {
       "config.b.c.d": SDE.write,
       "config.b": SDE.read,
       "config.c": SDE.write,
+      config: SDE.rw,
     });
 
     const [applied, removals] = acl.apply(
@@ -620,6 +628,7 @@ describe("Acl.apply() additional tests", () => {
 
     // Define an Acl with 'readWrite' descriptors and a restricted field
     const acl = AccessControlList.FromJson({
+      config: SimpleDescriptorEnum.readWrite,
       "config.setting1": SimpleDescriptorEnum.readWrite,
       "config.setting2": SimpleDescriptorEnum.readWrite,
       "config.restrictedSetting": SimpleDescriptorEnum.none, // restricted field
@@ -663,6 +672,7 @@ describe("Acl.apply() additional tests", () => {
     };
 
     const acl = AccessControlList.FromJson({
+      section: SimpleDescriptorEnum.read,
       "section.publicInfo": SimpleDescriptorEnum.read,
       "section.privateInfo": [
         { d: SimpleDescriptorEnum.read, roles: ["admin"] },

@@ -30,13 +30,14 @@ export function flatten<Obj extends GenericObject>(
       }' for input.`
     );
 
-  // Retrieve the keys of the object
-  const keys = Object.keys(obj);
-
   // Initialize the result object
   const result: GenericObject<BaseType> = {};
 
-  if (Array.isArray(obj)) result[path] = obj as any;
+  if (path && Array.isArray(obj)) result[path] = [] as any;
+  else if (path && typeof obj === "object") result[path] = {} as any;
+
+  // Retrieve the keys of the object
+  const keys = Object.keys(obj);
 
   for (let key of keys) {
     // Changed 'in' to 'of' to correctly iterate over keys

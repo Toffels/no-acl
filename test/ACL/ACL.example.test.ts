@@ -26,9 +26,11 @@ describe("Test readme.md example", () => {
         // Define descriptor.
         .a(["@read", "@instructorWrite", "@adminWrite"]),
       description: z.string().a(["@read", "@instructorWrite", "@adminWrite"]),
-      seats: z.object({
-        max: z.number().int().a(["@adminRW", "@instructorRead"]),
-      }),
+      seats: z
+        .object({
+          max: z.number().int().a(["@adminRW", "@instructorRead"]),
+        })
+        .a(["@read", "@adminRW"]),
       students: z
         .array(
           z.object({
@@ -139,6 +141,6 @@ describe("Test readme.md example", () => {
     const user = { roles: ["student"] };
     const write = courseSchema.acl.write(courseData, user);
     expect(write).toStrictEqual({});
-    console.log("student write", write);
+    // console.log("student write", write);
   });
 });

@@ -10,7 +10,9 @@ describe("flatten", () => {
     const flatObj = flatten(nestedObj);
     expect(flatObj).toEqual({
       a: 1,
+      b: {},
       "b.c": 2,
+      "b.d": {},
       "b.d.e": 3,
       f: true,
     });
@@ -33,9 +35,10 @@ describe("flatten", () => {
     };
     const expectedResult = {
       a: "hello",
+      b: {},
       "b.c": null, // assuming null should be flattened as well
       "b.d": false,
-      e: [1, 2, 3],
+      e: [],
       "e.0": 1,
       "e.1": 2,
       "e.2": 3,
@@ -46,11 +49,11 @@ describe("flatten", () => {
   it("should handle a straight array as input", () => {
     const arrayInput = [1, 2, { a: 3, b: [4, 5] }];
     const expectedOutput = {
-      "": [1, 2, { a: 3, b: [4, 5] }],
       "0": 1,
       "1": 2,
+      "2": {},
       "2.a": 3,
-      "2.b": [4, 5],
+      "2.b": [],
       "2.b.0": 4,
       "2.b.1": 5,
     };
@@ -66,12 +69,13 @@ describe("flatten", () => {
       },
     };
     const expectedOutput = {
-      numbers: [1, 2, 3],
+      numbers: [],
       "numbers.0": 1,
       "numbers.1": 2,
       "numbers.2": 3,
+      details: {},
       "details.name": "Test",
-      "details.values": [4, 5, 6],
+      "details.values": [],
       "details.values.0": 4,
       "details.values.1": 5,
       "details.values.2": 6,
@@ -116,9 +120,9 @@ describe("flatten", () => {
     const keys = Object.keys(
       flatten({ deep: { deeper: { deepest: "deepest" } } })
     );
-    expect(keys).not.toContain("deep");
+    expect(keys).toContain("deep");
     expect(keys).not.toContain("deeper");
-    expect(keys).not.toContain("deep.deeper");
+    expect(keys).toContain("deep.deeper");
     expect(keys).toContain("deep.deeper.deepest");
   });
 });
