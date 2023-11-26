@@ -7,6 +7,7 @@
     "test": "jest --watch",
     "lint": "eslint . --ext .ts",
     "cloc": "git ls-files | xargs cloc",
+    "prebuild": "rm -rr ./dist",
     "build": "ts-node node_modules/webpack/bin/webpack --env target=web && ts-node node_modules/webpack/bin/webpack --env target=node",
     "postbuild": "ts-node post-build.ts",
     "prepublish": "npm run build",
