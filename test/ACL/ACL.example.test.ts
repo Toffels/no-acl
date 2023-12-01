@@ -1,50 +1,16 @@
 import { z } from "zod";
-import { SDE, Variables } from "../../src/Types";
 import { A } from "../../src/zod/AssignAcl";
+
+import { ExampleCourseSchema } from "./example";
 
 // Import is required!
 A;
 
+const debug = false;
+
 describe("Test readme.md example", () => {
-  // Defining ACL variables for role-based access
-  const vars: Variables = {
-    "@adminWrite": { d: SDE.write, roles: ["administrator"] },
-    "@adminRead": { d: SDE.read, roles: ["administrator"] },
-    "@adminRW": { d: SDE.readWrite, roles: ["administrator"] },
-    "@instructorWrite": { d: SDE.write, roles: ["instructor"] },
-    "@instructorRead": { d: SDE.read, roles: ["instructor"] },
-  };
-
-  // Function to define roles
-  const getRoles = (user: { roles: string[] }) => user.roles;
-
   // ACL schema for a course
-  const courseSchema = z
-    .object({
-      title: z
-        .string()
-        // Define descriptor.
-        .a(["@read", "@instructorWrite", "@adminWrite"]),
-      description: z.string().a(["@read", "@instructorWrite", "@adminWrite"]),
-      seats: z
-        .object({
-          max: z.number().int().a(["@adminRW", "@instructorRead"]),
-        })
-        .a(["@read", "@adminRW"]),
-      students: z
-        .array(
-          z.object({
-            // Let's say it's fine that students can see the other students
-            id: z.string(),
-            name: z.string(),
-            grades: z.array(z.number()).a(["@instructorRead"]),
-            attendance: z.number().a(["@instructorRead"]),
-          })
-        )
-        .a(["@read"]),
-    })
-    // Setup Acl
-    .A({ vars, getRoles });
+  const courseSchema = ExampleCourseSchema;
 
   let courseData: z.infer<typeof courseSchema>;
 
@@ -90,7 +56,7 @@ describe("Test readme.md example", () => {
       delete student.attendance;
     });
     expect(read).toStrictEqual(courseData);
-    console.log("admin read", read);
+    if (debug) console.log("admin read", read);
   });
 
   it("Admin write view", () => {
@@ -99,14 +65,14 @@ describe("Test readme.md example", () => {
     // @ts-expect-error
     delete courseData.students;
     expect(write).toStrictEqual(courseData);
-    console.log("admin write", write);
+    if (debug) console.log("admin write", write);
   });
 
   it("Instructor read view", () => {
     const user = { roles: ["instructor"] };
     const read = courseSchema.acl.read(courseData, user);
     expect(read).toStrictEqual(courseData);
-    console.log("instructor read", read);
+    if (debug) console.log("instructor read", read);
   });
 
   it("Instructor write view", () => {
@@ -118,7 +84,7 @@ describe("Test readme.md example", () => {
 
     const write = courseSchema.acl.write(courseData, user);
     expect(write).toStrictEqual(courseData);
-    console.log("instructor write", write);
+    if (debug) console.log("instructor write", write);
   });
 
   it("Student read view", () => {
@@ -134,7 +100,7 @@ describe("Test readme.md example", () => {
 
     const read = courseSchema.acl.read(courseData, user);
     expect(read).toStrictEqual(courseData);
-    console.log("student read", read);
+    if (debug) console.log("student read", read);
   });
 
   it("Student write view", () => {

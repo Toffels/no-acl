@@ -179,9 +179,26 @@ export class AccessControlList<
     "@delete": SDE.delete,
   };
 
+  public copy(options?: Options<Vars, User>) {
+    return AccessControlList.FromJson(
+      { ...this.original },
+      {
+        vars: {
+          ...this.options?.vars,
+          ...options?.vars,
+        },
+        getRoles: this.options?.getRoles ?? options?.getRoles,
+        strict: this.options?.strict ?? options?.strict,
+      }
+    );
+  }
+
   private strict = true;
 
-  protected constructor(aclJson: AclJson, options?: Options<Vars, User>) {
+  protected constructor(
+    aclJson: AclJson,
+    private options?: Options<Vars, User>
+  ) {
     const { strict } = options ?? {};
     if (strict === false) {
       // console.warn(`None-Strict-Mode is not entirely tested.`);

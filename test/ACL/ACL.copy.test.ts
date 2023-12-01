@@ -1,0 +1,29 @@
+import { AccessControlList } from "../../src/AccessControlList";
+import { GenericUser, SDE, SimpleDescriptorEnum } from "../../src/Types";
+import { getValueByPath } from "../../src/utils/utils";
+import { A } from "../../src/zod/AssignAcl";
+import { ExampleCourseSchema } from "./example";
+
+A;
+
+describe("Acl copy", () => {
+  it(`should copy the acl`, () => {
+    const copy = ExampleCourseSchema.acl.copy();
+
+    expect(ExampleCourseSchema.acl).not.toBe(copy);
+    expect(ExampleCourseSchema.acl.toJson()).not.toBe(copy.toJson());
+    expect(ExampleCourseSchema.acl.toJson()).toStrictEqual(copy.toJson());
+  });
+
+  it(`should copy the acl`, () => {
+    const copy = ExampleCourseSchema.acl.copy({ vars: { "@asd": SDE.read } });
+
+    expect(ExampleCourseSchema.acl).not.toBe(copy);
+    expect(ExampleCourseSchema.acl.toJson()).not.toBe(copy.toJson());
+    expect(ExampleCourseSchema.acl.toJson()).not.toStrictEqual(copy.toJson());
+    expect({
+      ...ExampleCourseSchema.acl.toJson(),
+      "@asd": SDE.read,
+    }).toStrictEqual(copy.toJson());
+  });
+});
