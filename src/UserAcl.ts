@@ -1,5 +1,5 @@
 import { AccessControlList } from "./AccessControlList";
-import { GenericUser } from "./Types";
+import { GenericUser, SDE } from "./Types";
 
 export class UserAcl<
   Data extends {} = any,
@@ -33,4 +33,13 @@ export class UserAcl<
   public delete(data: Data) {
     return this.acl.delete(data, this.user);
   }
+
+  /** Check projection of  */
+  public proj = (() => ({
+    read: (patch: string) => this.acl.proj.read(patch, this.user),
+    write: (patch: string) => this.acl.proj.read(patch, this.user),
+    create: (patch: string) => this.acl.proj.read(patch, this.user),
+    update: (patch: string) => this.acl.proj.read(patch, this.user),
+    delete: (patch: string) => this.acl.proj.read(patch, this.user),
+  }))();
 }

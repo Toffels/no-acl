@@ -391,6 +391,54 @@ export class AccessControlList<
     return result;
   }
 
+  protected getProjection(
+    path: string,
+    user: User,
+    /** filters the data by either read, write or readWrite access. */
+    type:
+      | SimpleDescriptorEnum.read
+      | SimpleDescriptorEnum.write
+      | SimpleDescriptorEnum.create
+      | SimpleDescriptorEnum.update
+      | SimpleDescriptorEnum.delete
+  ) {
+    const [descriptor, _roles] = this.evalDescriptor(
+      this.getDescriptor(path),
+      user,
+      type
+    );
+
+    // Checks whether the descriptor matches the input type.
+    const matchTheType =
+      type === descriptor || descriptor === SimpleDescriptorEnum.readWrite;
+
+    // const hasWildcard = key.includes("*");
+    // if (hasWildcard) console.warn(key, this.getDescriptor(key), descriptor);
+
+    return matchTheType;
+  }
+
+  /** Check projection of  */
+  public proj = (() => ({
+    read: (patch: string, user: User) =>
+      this.getProjection(patch, user, SDE.read),
+    write: (patch: string, user: User) =>
+      this.getProjection(patch, user, SDE.write),
+    create: (patch: string, user: User) =>
+      this.getProjection(patch, user, SDE.create),
+    update: (patch: string, user: User) =>
+      this.getProjection(patch, user, SDE.update),
+    delete: (patch: string, user: User) =>
+      this.getProjection(patch, user, SDE.delete),
+  }))();
+
+  /** Gets the plain descriptor by path.
+   * If explicit descriptor is not defined, it will implicitly try to find the ancient descriptor.
+   */
+  public get(path: string): Descriptor | undefined {
+    return this.getDescriptor(path);
+  }
+
   /** Gets the plain descriptor by path.
    * If explicit descriptor is not defined, it will implicitly try to find the ancient descriptor.
    */
