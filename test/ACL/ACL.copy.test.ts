@@ -1,10 +1,11 @@
+import { z } from "zod";
 import { AccessControlList } from "../../src/AccessControlList";
 import { GenericUser, SDE, SimpleDescriptorEnum } from "../../src/Types";
 import { getValueByPath } from "../../src/utils/utils";
-import { A } from "../../src/zod/AssignAcl";
+import { A, ExtendZod } from "../../src/zod/AssignAcl";
 import { ExampleCourseSchema } from "./example";
 
-A;
+ExtendZod(z.ZodType);
 
 describe("Acl copy", () => {
   it(`should copy the acl`, () => {

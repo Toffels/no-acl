@@ -1,6 +1,6 @@
 {
   "name": "no-acl",
-  "version": "0.1.4",
+  "version": "0.1.4-b",
   "description": "A library for managing access control of nested object structures.",
   "main": "index.js",
   "scripts": {

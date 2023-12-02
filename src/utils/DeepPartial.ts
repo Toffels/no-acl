@@ -6,6 +6,6 @@ export type DeepPartial<T> = T extends {}
 
 export type DeepPartialNullable<T> = {
   [P in keyof T]?: T[P] extends object
-    ? DeepNullable<T[P]> | null
+    ? DeepPartialNullable<T[P]> | null
     : T[P] | null;
 };

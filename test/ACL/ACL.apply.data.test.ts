@@ -1,8 +1,10 @@
-import { z } from "zod";
+import { ZodType, z } from "zod";
 import { AccessControlList } from "../../src/AccessControlList";
 import { ArrayDescriptor, SDE, SpecialDescriptor } from "../../src/Types";
 import { Var, getValueByPath } from "../../src/utils/utils";
-import { A, a } from "../../src/zod/AssignAcl";
+import { A, ExtendZod, a } from "../../src/zod/AssignAcl";
+
+ExtendZod(z.ZodType);
 
 // Chaining-Syntax
 const simpleObjectA = z

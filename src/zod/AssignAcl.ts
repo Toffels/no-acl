@@ -52,28 +52,32 @@ declare module "zod" {
     // infered: z.infer<this>;
   }
 }
+export function ExtendZod(ZodType: typeof z.ZodType) {
+  ZodType.prototype.a = function <Z extends z.ZodType, D extends Descriptor>(
+    this: ZodType,
+    descriptor: D
+  ) {
+    this.descriptor = descriptor;
+    return this as Z & { descriptor: D };
+  };
+  ZodType.prototype.assignDescriptor = ZodType.prototype.a;
 
-ZodType.prototype.a = function <Z extends z.ZodType, D extends Descriptor>(
-  this: ZodType,
-  descriptor: D
-) {
-  this.descriptor = descriptor;
-  return this as Z & { descriptor: D };
-};
-ZodType.prototype.assignDescriptor = ZodType.prototype.a;
+  ZodType.prototype.A = function <
+    Z extends z.ZodType,
+    User extends GenericUser,
+    Vars extends Variables
+  >(this: Z, options?: Options<Vars, User>) {
+    const json = getDescriptor(this, "", true);
+    const acl = AccessControlList.FromJson<z.infer<Z>, User, Vars>(
+      json,
+      options
+    );
 
-ZodType.prototype.A = function <
-  Z extends z.ZodType,
-  User extends GenericUser,
-  Vars extends Variables
->(this: Z, options?: Options<Vars, User>) {
-  const json = getDescriptor(this, "", true);
-  const acl = AccessControlList.FromJson<z.infer<Z>, User, Vars>(json, options);
-
-  Object.assign(this, { acl });
-  return this as ZodAcl<Z, User, Vars>;
-};
-ZodType.prototype.AssignAcl = ZodType.prototype.A;
+    Object.assign(this, { acl });
+    return this as ZodAcl<Z, User, Vars>;
+  };
+  ZodType.prototype.AssignAcl = ZodType.prototype.A;
+}
 
 export function a<Z extends z.ZodType, D extends Descriptor>(des: D, zod: Z) {
   const extension = {

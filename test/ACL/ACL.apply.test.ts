@@ -1,6 +1,10 @@
+import { ZodType } from "zod";
 import { AccessControlList } from "../../src/AccessControlList";
 import { GenericUser, SDE, SimpleDescriptorEnum } from "../../src/Types";
 import { getValueByPath } from "../../src/utils/utils";
+import { ExtendZod } from "../../src/zod/AssignAcl";
+
+ExtendZod(ZodType);
 
 const user: GenericUser = { roles: [] };
 

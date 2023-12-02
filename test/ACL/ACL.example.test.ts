@@ -1,10 +1,9 @@
 import { z } from "zod";
-import { A } from "../../src/zod/AssignAcl";
+import { A, ExtendZod } from "../../src/zod/AssignAcl";
 
 import { ExampleCourseSchema } from "./example";
 
-// Import is required!
-A;
+ExtendZod(z.ZodType);
 
 const debug = false;
 
