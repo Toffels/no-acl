@@ -29,20 +29,20 @@ type ZodAcl<
 declare module "zod" {
   interface ZodType {
     descriptor: Descriptor;
-    a: <Z extends z.ZodType, D extends Descriptor>(
+    a: <Z extends ZodType, D extends Descriptor>(
       this: Z,
       descriptor: D
     ) => Z & { descriptor: D };
-    assignDescriptor: <Z extends z.ZodType, D extends Descriptor>(
+    assignDescriptor: <Z extends ZodType, D extends Descriptor>(
       this: Z,
       descriptor: D
     ) => Z & { descriptor: D };
-    A: <Z extends z.ZodType, User extends GenericUser, Vars extends Variables>(
+    A: <Z extends ZodType, User extends GenericUser, Vars extends Variables>(
       this: Z,
       options?: Options<Vars, User>
     ) => ZodAcl<Z, User>;
     AssignAcl: <
-      Z extends z.ZodType,
+      Z extends ZodType,
       User extends GenericUser,
       Vars extends Variables
     >(
@@ -52,31 +52,48 @@ declare module "zod" {
     // infered: z.infer<this>;
   }
 }
-export function ExtendZod(ZodType: typeof z.ZodType) {
-  ZodType.prototype.a = function <Z extends z.ZodType, D extends Descriptor>(
-    this: ZodType,
-    descriptor: D
-  ) {
+export function ExtendZod(zod: typeof z.ZodType, warn = true) {
+  if (warn && (!!zod.prototype.assignDescriptor || !!zod.prototype.AssignAcl))
+    console.warn(`Re-extending zod.`);
+
+  zod.prototype.assignDescriptor = function <
+    Z extends z.ZodType,
+    D extends Descriptor
+  >(this: ZodType, descriptor: D) {
     this.descriptor = descriptor;
     return this as Z & { descriptor: D };
   };
-  ZodType.prototype.assignDescriptor = ZodType.prototype.a;
 
-  ZodType.prototype.A = function <
+  if (!zod.prototype.a) zod.prototype.a = zod.prototype.assignDescriptor;
+
+  zod.prototype.AssignAcl = function <
     Z extends z.ZodType,
     User extends GenericUser,
     Vars extends Variables
   >(this: Z, options?: Options<Vars, User>) {
-    const json = getDescriptor(this, "", true);
-    const acl = AccessControlList.FromJson<z.infer<Z>, User, Vars>(
-      json,
-      options
-    );
+    let noacl: AccessControlList<z.TypeOf<Z>, User, Variables>;
 
-    Object.assign(this, { noacl: acl });
+    Object.assign(zod, {
+      // Temp.
+      noacl: "_",
+    });
+
+    Object.defineProperty(this, "noacl", {
+      get: function () {
+        if (noacl) return noacl;
+        const json = getDescriptor(this, "", true);
+        noacl = AccessControlList.FromJson<z.infer<Z>, User, Vars>(
+          json,
+          options
+        );
+        return noacl;
+      },
+    });
+
     return this as ZodAcl<Z, User, Vars>;
   };
-  ZodType.prototype.AssignAcl = ZodType.prototype.A;
+
+  if (!zod.prototype.A) zod.prototype.A = zod.prototype.AssignAcl;
 }
 
 export function a<Z extends z.ZodType, D extends Descriptor>(des: D, zod: Z) {
@@ -97,10 +114,22 @@ export function A<
   options?: Options<Vars, User>,
   debug?: boolean
 ): ZodAcl<Z, User, Vars> {
-  const json = getDescriptor(zod, "", true, debug);
-  const acl = AccessControlList.FromJson<z.infer<Z>, User, Vars>(json, options);
+  let noacl: AccessControlList<z.TypeOf<Z>, User, Variables>;
 
-  Object.assign(zod, { noacl: acl });
+  Object.assign(zod, {
+    // Temp.
+    noacl: "_",
+  });
+
+  Object.defineProperty(zod, "noacl", {
+    get: function () {
+      if (noacl) return noacl;
+      const json = getDescriptor(zod, "", true, debug);
+      noacl = AccessControlList.FromJson<z.infer<Z>, User, Vars>(json, options);
+      return noacl;
+    },
+  });
+
   return zod as ZodAcl<Z, User, Vars>;
 }
 export const AssignAcl = A;
