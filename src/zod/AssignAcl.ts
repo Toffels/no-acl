@@ -1,5 +1,6 @@
-import {
+import type {
   z,
+  infer as zinfer,
   ZodEffects,
   ZodObject,
   ZodRecord,
@@ -12,6 +13,7 @@ import {
   ZodType,
   ZodRecordDef,
   ZodArrayDef,
+  TypeOf,
 } from "zod";
 import { Acl, Descriptor, GenericUser, Variables } from "../Types";
 import { AccessControlList, Options } from "../AccessControlList";
@@ -23,7 +25,7 @@ type ZodAcl<
   User extends GenericUser,
   Vars extends Variables = Variables
 > = Z & {
-  noacl: AccessControlList<z.infer<Z>, User, Vars>;
+  noacl: AccessControlList<zinfer<Z>, User, Vars>;
 };
 
 declare module "zod" {
@@ -52,28 +54,49 @@ declare module "zod" {
     // infered: z.infer<this>;
   }
 }
-export function ExtendZod(zod: typeof z.ZodType, warn = true) {
-  if (warn && (!!zod.prototype.assignDescriptor || !!zod.prototype.AssignAcl))
+
+let Z: any;
+
+export function ExtendZod(
+  ztype: typeof ZodType,
+  z: {
+    ZodEffects: new (...args: any[]) => ZodEffects<any>;
+    ZodObject: new (...args: any[]) => ZodObject<any>;
+    ZodRecord: new (...args: any[]) => ZodRecord<any>;
+    ZodUnion: new (...args: any[]) => ZodUnion<any>;
+    ZodIntersection: new (...args: any[]) => ZodIntersection<any, any>;
+    ZodArray: new (...args: any[]) => ZodArray<any>;
+    ZodOptional: new (...args: any[]) => ZodOptional<any>;
+    ZodDefault: new (...args: any[]) => ZodDefault<any>;
+  },
+  warn = true
+) {
+  Z = z;
+
+  if (
+    warn &&
+    (!!ztype.prototype.assignDescriptor || !!ztype.prototype.AssignAcl)
+  )
     console.warn(`Re-extending zod.`);
 
-  zod.prototype.assignDescriptor = function <
-    Z extends z.ZodType,
+  ztype.prototype.assignDescriptor = function <
+    Z extends ZodType,
     D extends Descriptor
   >(this: ZodType, descriptor: D) {
     this.descriptor = descriptor;
     return this as Z & { descriptor: D };
   };
 
-  if (!zod.prototype.a) zod.prototype.a = zod.prototype.assignDescriptor;
+  if (!ztype.prototype.a) ztype.prototype.a = ztype.prototype.assignDescriptor;
 
-  zod.prototype.AssignAcl = function <
-    Z extends z.ZodType,
+  ztype.prototype.AssignAcl = function <
+    Z extends ZodType,
     User extends GenericUser,
     Vars extends Variables
   >(this: Z, options?: Options<Vars, User>) {
-    let noacl: AccessControlList<z.TypeOf<Z>, User, Variables>;
+    let noacl: AccessControlList<TypeOf<Z>, User, Variables>;
 
-    Object.assign(zod, {
+    Object.assign(ztype, {
       // Temp.
       noacl: "_",
     });
@@ -82,7 +105,7 @@ export function ExtendZod(zod: typeof z.ZodType, warn = true) {
       get: function () {
         if (noacl) return noacl;
         const json = getDescriptor(this, "", true);
-        noacl = AccessControlList.FromJson<z.infer<Z>, User, Vars>(
+        noacl = AccessControlList.FromJson<zinfer<Z>, User, Vars>(
           json,
           options
         );
@@ -93,10 +116,19 @@ export function ExtendZod(zod: typeof z.ZodType, warn = true) {
     return this as ZodAcl<Z, User, Vars>;
   };
 
-  if (!zod.prototype.A) zod.prototype.A = zod.prototype.AssignAcl;
+  if (!ztype.prototype.A) ztype.prototype.A = ztype.prototype.AssignAcl;
 }
 
-export function a<Z extends z.ZodType, D extends Descriptor>(des: D, zod: Z) {
+function Instanceof(zod: ZodType, className: string) {
+  if (!Z[className]) {
+    console.warn(`Unknown: "${className}"`);
+    return false;
+  }
+
+  return zod instanceof Z[className];
+}
+
+export function a<Z extends ZodType, D extends Descriptor>(des: D, zod: Z) {
   const extension = {
     descriptor: des,
   };
@@ -106,7 +138,7 @@ export function a<Z extends z.ZodType, D extends Descriptor>(des: D, zod: Z) {
 export const assignDescriptor = a;
 
 export function A<
-  Z extends z.ZodType,
+  Z extends ZodType,
   User extends GenericUser,
   Vars extends Variables
 >(
@@ -114,7 +146,7 @@ export function A<
   options?: Options<Vars, User>,
   debug?: boolean
 ): ZodAcl<Z, User, Vars> {
-  let noacl: AccessControlList<z.TypeOf<Z>, User, Variables>;
+  let noacl: AccessControlList<TypeOf<Z>, User, Variables>;
 
   Object.assign(zod, {
     // Temp.
@@ -125,7 +157,7 @@ export function A<
     get: function () {
       if (noacl) return noacl;
       const json = getDescriptor(zod, "", true, debug);
-      noacl = AccessControlList.FromJson<z.infer<Z>, User, Vars>(json, options);
+      noacl = AccessControlList.FromJson<zinfer<Z>, User, Vars>(json, options);
       return noacl;
     },
   });
@@ -140,21 +172,21 @@ function createPath(path: string, key: string) {
   return `${path === "" ? "" : `${path}.`}${key}`;
 }
 
-function findShape<Z extends z.ZodType>(zod: Z) {
-  if (zod instanceof ZodObject) {
-    return zod.shape;
-  } else if (zod instanceof ZodOptional) {
-    return zod.unwrap();
-  } else if (zod instanceof ZodEffects) {
-    return zod._def.schema;
-  } else if (zod instanceof ZodDefault) {
-    return zod._def.innerType;
+function findShape<Z extends ZodType>(zod: Z) {
+  if (Instanceof(zod, "ZodObject")) {
+    return (zod as unknown as ZodObject<any, any>).shape;
+  } else if (Instanceof(zod, "ZodOptional")) {
+    return (zod as unknown as ZodOptional<any>).unwrap();
+  } else if (Instanceof(zod, "ZodEffects")) {
+    return (zod as unknown as ZodEffects<any>)._def.schema;
+  } else if (Instanceof(zod, "ZodDefault")) {
+    return (zod as unknown as ZodDefault<any>)._def.innerType;
   }
 
   return null;
 }
 
-function getDescriptor<Z extends z.ZodType, D extends Descriptor>(
+function getDescriptor<Z extends ZodType, D extends Descriptor>(
   zod: Z,
   path = "",
   deep = true,
@@ -183,9 +215,11 @@ function getDescriptor<Z extends z.ZodType, D extends Descriptor>(
     return acl;
   }
 
-  if (zod instanceof ZodIntersection) {
-    const left = zod._def.left as ZodType;
-    const right = zod._def.right as ZodType;
+  if (Instanceof(zod, "ZodIntersection")) {
+    const left = (zod as unknown as ZodIntersection<any, any>)._def
+      .left as ZodType;
+    const right = (zod as unknown as ZodIntersection<any, any>)._def
+      .right as ZodType;
     const options = [left, right] as [ZodType, ZodType];
 
     const optionDescriptors = options.map((o) =>
@@ -206,7 +240,7 @@ function getDescriptor<Z extends z.ZodType, D extends Descriptor>(
     const result = {};
     Object.assign(result, ...optionDescriptors, acl);
     return result;
-  } else if (zod instanceof ZodArray) {
+  } else if (Instanceof(zod, "ZodArray")) {
     const innerType = (zod._def as ZodArrayDef).type;
     const wildcardPath = createPath(path, "*");
     acl[wildcardPath] = innerType.descriptor ?? zod.descriptor;
@@ -214,7 +248,7 @@ function getDescriptor<Z extends z.ZodType, D extends Descriptor>(
     const valueDefinition = getDescriptor(innerType, wildcardPath, deep, debug);
 
     Object.assign(acl, valueDefinition);
-  } else if (zod instanceof ZodRecord) {
+  } else if (Instanceof(zod, "ZodRecord")) {
     acl[path] = zod.descriptor;
 
     const wildcardPath = createPath(path, "*");
@@ -229,9 +263,16 @@ function getDescriptor<Z extends z.ZodType, D extends Descriptor>(
     );
 
     Object.assign(acl, valueDefinition);
-  } else if (zod instanceof ZodUnion) {
-    const optionDescriptors = Object.keys(zod._def.options).map((o) =>
-      getDescriptor(zod._def.options[o] as any, path, deep, debug)
+  } else if (Instanceof(zod, "ZodUnion")) {
+    const optionDescriptors = Object.keys(
+      (zod as unknown as ZodUnion<any>)._def.options
+    ).map((o) =>
+      getDescriptor(
+        (zod as unknown as ZodUnion<any>)._def.options[o] as any,
+        path,
+        deep,
+        debug
+      )
     );
 
     if (debug)
