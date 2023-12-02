@@ -119,7 +119,7 @@ describe("ZAcl", () => {
   );
 
   it("should fetch the acl from the zod definition", () => {
-    expect(myComplexSchema.acl.original).toStrictEqual({
+    expect(myComplexSchema.noacl.original).toStrictEqual({
       string: "@r",
       email: "@r",
       number_int: "@r",

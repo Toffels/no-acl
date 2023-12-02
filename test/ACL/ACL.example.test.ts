@@ -45,9 +45,9 @@ describe("Test readme.md example", () => {
 
   it("Admin read view", () => {
     const user = { roles: ["administrator"] };
-    // console.log(courseSchema.acl.toJson());
-    // console.log(courseSchema.acl.apply(courseData, user, SDE.read, true));
-    const read = courseSchema.acl.read(courseData, user);
+    // console.log(courseSchema.noacl.toJson());
+    // console.log(courseSchema.noacl.apply(courseData, user, SDE.read, true));
+    const read = courseSchema.noacl.read(courseData, user);
     courseData.students.forEach((student) => {
       // @ts-expect-error
       delete student.grades;
@@ -60,7 +60,7 @@ describe("Test readme.md example", () => {
 
   it("Admin write view", () => {
     const user = { roles: ["administrator"] };
-    const write = courseSchema.acl.write(courseData, user);
+    const write = courseSchema.noacl.write(courseData, user);
     // @ts-expect-error
     delete courseData.students;
     expect(write).toStrictEqual(courseData);
@@ -69,7 +69,7 @@ describe("Test readme.md example", () => {
 
   it("Instructor read view", () => {
     const user = { roles: ["instructor"] };
-    const read = courseSchema.acl.read(courseData, user);
+    const read = courseSchema.noacl.read(courseData, user);
     expect(read).toStrictEqual(courseData);
     if (debug) console.log("instructor read", read);
   });
@@ -81,7 +81,7 @@ describe("Test readme.md example", () => {
     // @ts-expect-error
     delete courseData.students;
 
-    const write = courseSchema.acl.write(courseData, user);
+    const write = courseSchema.noacl.write(courseData, user);
     expect(write).toStrictEqual(courseData);
     if (debug) console.log("instructor write", write);
   });
@@ -97,14 +97,14 @@ describe("Test readme.md example", () => {
       delete student.attendance;
     });
 
-    const read = courseSchema.acl.read(courseData, user);
+    const read = courseSchema.noacl.read(courseData, user);
     expect(read).toStrictEqual(courseData);
     if (debug) console.log("student read", read);
   });
 
   it("Student write view", () => {
     const user = { roles: ["student"] };
-    const write = courseSchema.acl.write(courseData, user);
+    const write = courseSchema.noacl.write(courseData, user);
     expect(write).toStrictEqual({});
     // console.log("student write", write);
   });

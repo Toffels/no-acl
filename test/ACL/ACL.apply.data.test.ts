@@ -74,7 +74,7 @@ describe("Acl.apply() from Zod with realistic data.", () => {
   );
 
   describe("TenantSchema", () => {
-    const tenantSchemaAclJson = tenantSchema.acl.toJson();
+    const tenantSchemaAclJson = tenantSchema.noacl.toJson();
     it("should have a regex in the roles for variable aread", () => {
       expect(
         (
@@ -86,11 +86,11 @@ describe("Acl.apply() from Zod with realistic data.", () => {
     });
 
     it("should resolve array descriptor deeply", () => {
-      const getDescriptor = tenantSchema.acl["getDescriptor"].bind(
-        tenantSchema.acl
+      const getDescriptor = tenantSchema.noacl["getDescriptor"].bind(
+        tenantSchema.noacl
       );
-      const evalDescriptor = tenantSchema.acl["evalDescriptor"].bind(
-        tenantSchema.acl
+      const evalDescriptor = tenantSchema.noacl["evalDescriptor"].bind(
+        tenantSchema.noacl
       );
 
       expect(getDescriptor("name")).toStrictEqual(["@aread", "@awrite"]);
@@ -107,7 +107,7 @@ describe("Acl.apply() from Zod with realistic data.", () => {
 
     it("should care about not showing the creditcard information to admins", () => {
       const data = <z.infer<typeof tenantSchema>>{};
-      const [applied, removed, roles, paths] = tenantSchema.acl.apply(
+      const [applied, removed, roles, paths] = tenantSchema.noacl.apply(
         data,
         {
           roles: ["admin"],
@@ -130,7 +130,7 @@ describe("Acl.apply() from Zod with realistic data.", () => {
       expect(roles["paymentInfo.cvv"]).toStrictEqual(["admin"]);
     });
 
-    console.log(tenantSchema.acl.toString(true));
+    console.log(tenantSchema.noacl.toString(true));
   });
 
   describe("ProjectSchema", () => {
@@ -174,7 +174,7 @@ describe("Acl.apply() from Zod with realistic data.", () => {
       });
 
     it("should drop 'gameGenre' property, since no descriptor is defined.", () => {
-      const [applied, removals, roles, paths] = projectSchema.acl.apply(
+      const [applied, removals, roles, paths] = projectSchema.noacl.apply(
         { gameGenre: "PC" } as any,
         { roles: [] },
         SDE.read,
@@ -187,7 +187,7 @@ describe("Acl.apply() from Zod with realistic data.", () => {
     it("should still drop 'gameGenre', even if afterwards, the descriptor is assigned.", () => {
       projectSchema.shape.gameGenre.a("@read");
 
-      const [applied, removals, roles, paths] = projectSchema.acl.apply(
+      const [applied, removals, roles, paths] = projectSchema.noacl.apply(
         { gameGenre: "PC" } as any,
         { roles: [] },
         SDE.read,
@@ -198,7 +198,7 @@ describe("Acl.apply() from Zod with realistic data.", () => {
     });
 
     it("should have the acl property", () => {
-      expect(projectSchema.acl).toBeInstanceOf(AccessControlList);
+      expect(projectSchema.noacl).toBeInstanceOf(AccessControlList);
     });
 
     it("should have the descriptor property", () => {

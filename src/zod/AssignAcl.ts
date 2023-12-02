@@ -23,7 +23,7 @@ type ZodAcl<
   User extends GenericUser,
   Vars extends Variables = Variables
 > = Z & {
-  acl: AccessControlList<z.infer<Z>, User, Vars>;
+  noacl: AccessControlList<z.infer<Z>, User, Vars>;
 };
 
 declare module "zod" {
@@ -73,7 +73,7 @@ export function ExtendZod(ZodType: typeof z.ZodType) {
       options
     );
 
-    Object.assign(this, { acl });
+    Object.assign(this, { noacl: acl });
     return this as ZodAcl<Z, User, Vars>;
   };
   ZodType.prototype.AssignAcl = ZodType.prototype.A;
@@ -100,7 +100,7 @@ export function A<
   const json = getDescriptor(zod, "", true, debug);
   const acl = AccessControlList.FromJson<z.infer<Z>, User, Vars>(json, options);
 
-  Object.assign(zod, { acl });
+  Object.assign(zod, { noacl: acl });
   return zod as ZodAcl<Z, User, Vars>;
 }
 export const AssignAcl = A;
