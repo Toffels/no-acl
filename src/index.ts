@@ -14,4 +14,4 @@ export {
   SDE,
 } from "./Types";
 
-export { a as za, A as ZAcl, ExtendZod, a, A } from "./zod/AssignAcl";
+export { a as za, A as ZAcl, a, A, zInit } from "./zod/AssignAcl";

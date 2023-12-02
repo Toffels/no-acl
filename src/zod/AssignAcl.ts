@@ -57,7 +57,7 @@ declare module "zod" {
 
 let Z: any;
 
-export function ExtendZod(
+export function zInit(
   ztype: typeof ZodType,
   z: {
     ZodEffects: new (...args: any[]) => ZodEffects<any>;
@@ -175,10 +175,10 @@ function createPath(path: string, key: string) {
 function findShape<Z extends ZodType>(zod: Z) {
   if (Instanceof(zod, "ZodObject")) {
     return (zod as unknown as ZodObject<any, any>).shape;
-  } else if (Instanceof(zod, "ZodOptional")) {
-    return (zod as unknown as ZodOptional<any>).unwrap();
+    // Todo: handle same way as Optional
   } else if (Instanceof(zod, "ZodEffects")) {
     return (zod as unknown as ZodEffects<any>)._def.schema;
+    // Todo: handle same way as Optional
   } else if (Instanceof(zod, "ZodDefault")) {
     return (zod as unknown as ZodDefault<any>)._def.innerType;
   }
@@ -215,7 +215,17 @@ function getDescriptor<Z extends ZodType, D extends Descriptor>(
     return acl;
   }
 
-  if (Instanceof(zod, "ZodIntersection")) {
+  if (Instanceof(zod, "ZodOptional")) {
+    const innerType = (zod as unknown as ZodOptional<any>).unwrap();
+
+    const result = {};
+    Object.assign(
+      result,
+      getDescriptor(innerType as any, path, deep, debug),
+      acl
+    );
+    return result;
+  } else if (Instanceof(zod, "ZodIntersection")) {
     const left = (zod as unknown as ZodIntersection<any, any>)._def
       .left as ZodType;
     const right = (zod as unknown as ZodIntersection<any, any>)._def
