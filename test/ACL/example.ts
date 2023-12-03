@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { SDE, Variables } from "../../src/Types";
-import { ExtendZod } from "../../src/zod/AssignAcl";
+import { zInit } from "../../src/zod/AssignAcl";
 
-ExtendZod(z.ZodType);
+zInit(z);
 
 // Defining ACL variables for role-based access
 export const vars: Variables = {

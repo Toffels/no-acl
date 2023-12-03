@@ -13,6 +13,7 @@ import {
   SpecialDescriptor,
   VariableDescriptorKey,
   Variables,
+  Filter,
 } from "./Types";
 import { DeepPartialNullable, DeepPartial } from "./utils/DeepPartial";
 import { serializeDescriptor } from "./utils/serialize";
@@ -236,8 +237,14 @@ export class AccessControlList<
   }
 
   /** Returns matching roles. */
-  protected matchRoles(descriptor: SpecialDescriptor, user: User): string[] {
-    const userRoles = this.getRoles(user);
+  protected matchRoles(
+    descriptor: SpecialDescriptor,
+    user: User,
+    filter?: Filter
+  ): string[] {
+    const userRoles = filter
+      ? this.getRoles(user).filter(filter)
+      : this.getRoles(user);
     const matches: string[] = [];
     const { roles } = descriptor;
     for (const role of roles) {
@@ -252,25 +259,49 @@ export class AccessControlList<
   }
 
   /** Modifies the input data object and removes any property that is not readable by the provided user. */
-  public read(data: Data, user: User) {
-    return this.apply(data, user, SimpleDescriptorEnum.read, undefined);
+  public read(data: Data, user: User, filter?: Filter) {
+    return this.apply(data, user, SimpleDescriptorEnum.read, filter, undefined);
   }
 
   /** Modifies the input data object and removes any property that is not writable by the provided user. */
-  public write(data: Data, user: User) {
-    return this.apply(data, user, SimpleDescriptorEnum.write, undefined);
+  public write(data: Data, user: User, filter?: Filter) {
+    return this.apply(
+      data,
+      user,
+      SimpleDescriptorEnum.write,
+      filter,
+      undefined
+    );
   }
 
-  public create(data: Data, user: User) {
-    return this.apply(data, user, SimpleDescriptorEnum.create, undefined);
+  public create(data: Data, user: User, filter?: Filter) {
+    return this.apply(
+      data,
+      user,
+      SimpleDescriptorEnum.create,
+      filter,
+      undefined
+    );
   }
 
-  public update(data: Data, user: User) {
-    return this.apply(data, user, SimpleDescriptorEnum.update, undefined);
+  public update(data: Data, user: User, filter?: Filter) {
+    return this.apply(
+      data,
+      user,
+      SimpleDescriptorEnum.update,
+      filter,
+      undefined
+    );
   }
 
-  public delete(data: Data, user: User) {
-    return this.apply(data, user, SimpleDescriptorEnum.delete, undefined);
+  public delete(data: Data, user: User, filter?: Filter) {
+    return this.apply(
+      data,
+      user,
+      SimpleDescriptorEnum.delete,
+      filter,
+      undefined
+    );
   }
 
   public apply<Meta extends undefined | true>(
@@ -283,6 +314,7 @@ export class AccessControlList<
       | SimpleDescriptorEnum.create
       | SimpleDescriptorEnum.update
       | SimpleDescriptorEnum.delete,
+    filter: Filter | undefined,
     meta: Meta
   ): Meta extends true
     ? [
@@ -338,7 +370,8 @@ export class AccessControlList<
         const [descriptor, _roles] = this.evalDescriptor(
           this.getDescriptor(key),
           user,
-          type
+          type,
+          filter
         );
 
         // Checks whether the descriptor matches the input type.
@@ -400,12 +433,14 @@ export class AccessControlList<
       | SimpleDescriptorEnum.write
       | SimpleDescriptorEnum.create
       | SimpleDescriptorEnum.update
-      | SimpleDescriptorEnum.delete
+      | SimpleDescriptorEnum.delete,
+    filter?: Filter
   ) {
     const [descriptor, _roles] = this.evalDescriptor(
       this.getDescriptor(path),
       user,
-      type
+      type,
+      filter
     );
 
     // Checks whether the descriptor matches the input type.
@@ -420,16 +455,16 @@ export class AccessControlList<
 
   /** Check projection of  */
   public proj = (() => ({
-    read: (patch: string, user: User) =>
-      this.getProjection(patch, user, SDE.read),
-    write: (patch: string, user: User) =>
-      this.getProjection(patch, user, SDE.write),
-    create: (patch: string, user: User) =>
-      this.getProjection(patch, user, SDE.create),
-    update: (patch: string, user: User) =>
-      this.getProjection(patch, user, SDE.update),
-    delete: (patch: string, user: User) =>
-      this.getProjection(patch, user, SDE.delete),
+    read: (patch: string, user: User, filter?: Filter) =>
+      this.getProjection(patch, user, SDE.read, filter),
+    write: (patch: string, user: User, filter?: Filter) =>
+      this.getProjection(patch, user, SDE.write, filter),
+    create: (patch: string, user: User, filter?: Filter) =>
+      this.getProjection(patch, user, SDE.create, filter),
+    update: (patch: string, user: User, filter?: Filter) =>
+      this.getProjection(patch, user, SDE.update, filter),
+    delete: (patch: string, user: User, filter?: Filter) =>
+      this.getProjection(patch, user, SDE.delete, filter),
   }))();
 
   /** Gets the plain descriptor by path.
@@ -503,7 +538,8 @@ export class AccessControlList<
       | SimpleDescriptorEnum.write
       | SimpleDescriptorEnum.create
       | SimpleDescriptorEnum.update
-      | SimpleDescriptorEnum.delete
+      | SimpleDescriptorEnum.delete,
+    filter?: Filter
   ): [descriptor: SimpleDescriptorEnum, roles?: string[]] {
     if (descriptor === undefined) {
       // Falls back to No.
@@ -524,14 +560,14 @@ export class AccessControlList<
     if (typeof descriptor === "string") {
       if (descriptor[0] === "@") {
         const variable = descriptor as VariableDescriptorKey;
-        return this.evalDescriptor(this.#vars[variable], user, type);
+        return this.evalDescriptor(this.#vars[variable], user, type, filter);
       }
       return [descriptor as SimpleDescriptorEnum];
 
       // ArrayDescriptor
     } else if (Array.isArray(descriptor)) {
       const evaluatedDescriptors = descriptor.map((_d) =>
-        this.evalDescriptor(_d, user, type)
+        this.evalDescriptor(_d, user, type, filter)
       );
 
       const neverDescriptor = evaluatedDescriptors.find(

@@ -2,9 +2,9 @@ import { ZodType, z } from "zod";
 import { AccessControlList } from "../../src/AccessControlList";
 import { ArrayDescriptor, SDE, SpecialDescriptor } from "../../src/Types";
 import { Var, getValueByPath } from "../../src/utils/utils";
-import { A, ExtendZod, a } from "../../src/zod/AssignAcl";
+import { A, a, zInit } from "../../src/zod/AssignAcl";
 
-ExtendZod(z.ZodType);
+zInit(z);
 
 // Chaining-Syntax
 const simpleObjectA = z
@@ -114,6 +114,7 @@ describe("Acl.apply() from Zod with realistic data.", () => {
           groups: ["Google"],
         },
         SDE.write,
+        undefined,
         true
       );
 
@@ -178,6 +179,7 @@ describe("Acl.apply() from Zod with realistic data.", () => {
         { gameGenre: "PC" } as any,
         { roles: [] },
         SDE.read,
+        undefined,
         true
       );
 
@@ -191,6 +193,7 @@ describe("Acl.apply() from Zod with realistic data.", () => {
         { gameGenre: "PC" } as any,
         { roles: [] },
         SDE.read,
+        undefined,
         true
       );
 

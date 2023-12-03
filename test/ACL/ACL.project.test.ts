@@ -22,7 +22,13 @@ describe("Acl project", () => {
       "deep.*.*.deepest": SDE.readWrite,
     });
 
-    const [, removals, , pT] = acl["apply"]({} as any, user, SDE.read, true);
+    const [, removals, , pT] = acl["apply"](
+      {} as any,
+      user,
+      SDE.read,
+      undefined,
+      true
+    );
 
     expect(acl.proj.read("shouldBeFalse", user)).toBe(false);
     expect(acl.proj.read("shouldBeTrue", user)).toBe(true);

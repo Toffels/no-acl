@@ -1,11 +1,11 @@
-import { ZodType } from "zod";
+import { z } from "zod";
 import { AccessControlList } from "../../src/AccessControlList";
 import { SimpleDescriptorEnum } from "../../src/Types";
-import { ExtendZod } from "../../src/zod/AssignAcl";
+import { zInit } from "../../src/zod/AssignAcl";
 
 const TIME_THRESHOLD = 2;
 const NUMBER_OF_RUNS = 1000;
-ExtendZod(ZodType);
+zInit(z);
 
 describe("Acl.apply() benchmarking", () => {
   let logs: string[] = [];
