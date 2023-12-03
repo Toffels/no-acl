@@ -10,7 +10,6 @@ Install the NO-ACL using npm:
 npm install no-acl
 ```
 
-
 ## Introduction
 
 NO-ACL (Nested Object Access Control List) is a JavaScript library that offers a novel approach to managing access control in applications. Differing from traditional ACLs, which typically secure entire resources, NO-ACL focuses on providing detailed control at the level of individual fields within nested objects. This approach enables the definition of precise access rules, ensuring that users have the appropriate level of access to data they interact with. Designed for applications with complex data structures, NO-ACL presents a secure and flexible method for handling field-level access control, making it a valuable tool for developers seeking to enhance data security and integrity.
@@ -76,9 +75,25 @@ console.log(result);
 ```
 
 ## Zod Usage
+
+### Init
 ```ts
-import { AccessControlList as Acl, SimpleDescriptorEnum as SDE } from 'no-acl';
-import type { GenericUser as IUser } from 'no-acl';
+import { z } from "zod";
+import * as noacl from "no-acl";
+
+// Important, noacl needs zod for the types, but will not import it's code.
+// If you won't use zod, skip this step.
+// Import zod and no-acl, then init no-acl with zod.
+noacl.zInit(z);
+```
+
+### Example
+```ts
+import { z } from "zod";
+import * as noacl from "no-acl";
+import { SimpleDescriptorEnum as SDE } from 'no-acl';
+
+noacl.zInit(z);
 
 const DataSchema = z.object({
   user: z.object({

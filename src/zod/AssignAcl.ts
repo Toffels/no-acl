@@ -58,7 +58,6 @@ declare module "zod" {
 let Z: any;
 
 export function zInit(
-  ztype: typeof ZodType,
   z: {
     ZodEffects: new (...args: any[]) => ZodEffects<any>;
     ZodObject: new (...args: any[]) => ZodObject<any>;
@@ -72,6 +71,7 @@ export function zInit(
   warn = true
 ) {
   Z = z;
+  const ztype = (z as any)["ZodType"] as typeof ZodType;
 
   if (
     warn &&
