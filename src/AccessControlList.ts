@@ -240,6 +240,7 @@ export class AccessControlList<
   protected matchRoles(
     descriptor: SpecialDescriptor,
     user: User,
+    /** Filter to be applied to user roles. Default: () => true */
     filter?: Filter
   ): string[] {
     const userRoles = filter
@@ -259,12 +260,22 @@ export class AccessControlList<
   }
 
   /** Modifies the input data object and removes any property that is not readable by the provided user. */
-  public read(data: Data, user: User, filter?: Filter) {
+  public read(
+    data: Data,
+    user: User,
+    /** Filter to be applied to user roles. Default: () => true */
+    filter?: Filter
+  ) {
     return this.apply(data, user, SimpleDescriptorEnum.read, filter, undefined);
   }
 
   /** Modifies the input data object and removes any property that is not writable by the provided user. */
-  public write(data: Data, user: User, filter?: Filter) {
+  public write(
+    data: Data,
+    user: User,
+    /** Filter to be applied to user roles. Default: () => true */
+    filter?: Filter
+  ) {
     return this.apply(
       data,
       user,
@@ -274,7 +285,12 @@ export class AccessControlList<
     );
   }
 
-  public create(data: Data, user: User, filter?: Filter) {
+  public create(
+    data: Data,
+    user: User,
+    /** Filter to be applied to user roles. Default: () => true */
+    filter?: Filter
+  ) {
     return this.apply(
       data,
       user,
@@ -284,7 +300,12 @@ export class AccessControlList<
     );
   }
 
-  public update(data: Data, user: User, filter?: Filter) {
+  public update(
+    data: Data,
+    user: User,
+    /** Filter to be applied to user roles. Default: () => true */
+    filter?: Filter
+  ) {
     return this.apply(
       data,
       user,
@@ -294,7 +315,12 @@ export class AccessControlList<
     );
   }
 
-  public delete(data: Data, user: User, filter?: Filter) {
+  public delete(
+    data: Data,
+    user: User,
+    /** Filter to be applied to user roles. Default: () => true */
+    filter?: Filter
+  ) {
     return this.apply(
       data,
       user,
@@ -314,6 +340,7 @@ export class AccessControlList<
       | SimpleDescriptorEnum.create
       | SimpleDescriptorEnum.update
       | SimpleDescriptorEnum.delete,
+    /** Filter to be applied to user roles. Default: () => true */
     filter: Filter | undefined,
     meta: Meta
   ): Meta extends true
@@ -434,6 +461,7 @@ export class AccessControlList<
       | SimpleDescriptorEnum.create
       | SimpleDescriptorEnum.update
       | SimpleDescriptorEnum.delete,
+    /** Filter to be applied to user roles. Default: () => true */
     filter?: Filter
   ) {
     const [descriptor, _roles] = this.evalDescriptor(
@@ -455,16 +483,36 @@ export class AccessControlList<
 
   /** Check projection of  */
   public proj = (() => ({
-    read: (patch: string, user: User, filter?: Filter) =>
-      this.getProjection(patch, user, SDE.read, filter),
-    write: (patch: string, user: User, filter?: Filter) =>
-      this.getProjection(patch, user, SDE.write, filter),
-    create: (patch: string, user: User, filter?: Filter) =>
-      this.getProjection(patch, user, SDE.create, filter),
-    update: (patch: string, user: User, filter?: Filter) =>
-      this.getProjection(patch, user, SDE.update, filter),
-    delete: (patch: string, user: User, filter?: Filter) =>
-      this.getProjection(patch, user, SDE.delete, filter),
+    read: (
+      patch: string,
+      user: User,
+      /** Filter to be applied to user roles. Default: () => true */
+      filter?: Filter
+    ) => this.getProjection(patch, user, SDE.read, filter),
+    write: (
+      patch: string,
+      user: User,
+      /** Filter to be applied to user roles. Default: () => true */
+      filter?: Filter
+    ) => this.getProjection(patch, user, SDE.write, filter),
+    create: (
+      patch: string,
+      user: User,
+      /** Filter to be applied to user roles. Default: () => true */
+      filter?: Filter
+    ) => this.getProjection(patch, user, SDE.create, filter),
+    update: (
+      patch: string,
+      user: User,
+      /** Filter to be applied to user roles. Default: () => true */
+      filter?: Filter
+    ) => this.getProjection(patch, user, SDE.update, filter),
+    delete: (
+      patch: string,
+      user: User,
+      /** Filter to be applied to user roles. Default: () => true */
+      filter?: Filter
+    ) => this.getProjection(patch, user, SDE.delete, filter),
   }))();
 
   /** Gets the plain descriptor by path.
@@ -539,6 +587,7 @@ export class AccessControlList<
       | SimpleDescriptorEnum.create
       | SimpleDescriptorEnum.update
       | SimpleDescriptorEnum.delete,
+    /** Filter to be applied to user roles. Default: () => true */
     filter?: Filter
   ): [descriptor: SimpleDescriptorEnum, roles?: string[]] {
     if (descriptor === undefined) {

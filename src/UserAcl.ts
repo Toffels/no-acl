@@ -14,37 +14,72 @@ export class UserAcl<
     this.acl = acl;
   }
 
-  public read(data: Data, filter?: Filter) {
+  public read(
+    data: Data,
+    /** Filter to be applied to user roles. Default: () => true */
+    filter?: Filter
+  ) {
     return this.acl.read(data, this.user, filter);
   }
 
-  public write(data: Data, filter?: Filter) {
+  public write(
+    data: Data,
+    /** Filter to be applied to user roles. Default: () => true */
+    filter?: Filter
+  ) {
     return this.acl.write(data, this.user, filter);
   }
 
-  public create(data: Data, filter?: Filter) {
+  public create(
+    data: Data,
+    /** Filter to be applied to user roles. Default: () => true */
+    filter?: Filter
+  ) {
     return this.acl.create(data, this.user, filter);
   }
 
-  public update(data: Data, filter?: Filter) {
+  public update(
+    data: Data,
+    /** Filter to be applied to user roles. Default: () => true */
+    filter?: Filter
+  ) {
     return this.acl.update(data, this.user, filter);
   }
 
-  public delete(data: Data, filter?: Filter) {
+  public delete(
+    data: Data,
+    /** Filter to be applied to user roles. Default: () => true */
+    filter?: Filter
+  ) {
     return this.acl.delete(data, this.user, filter);
   }
 
   /** Check projection of  */
   public proj = (() => ({
-    read: (path: string, filter?: Filter) =>
-      this.acl.proj.read(path, this.user, filter),
-    write: (path: string, filter?: Filter) =>
-      this.acl.proj.read(path, this.user, filter),
-    create: (path: string, filter?: Filter) =>
-      this.acl.proj.read(path, this.user, filter),
-    update: (path: string, filter?: Filter) =>
-      this.acl.proj.read(path, this.user, filter),
-    delete: (path: string, filter?: Filter) =>
-      this.acl.proj.read(path, this.user, filter),
+    read: (
+      path: string,
+      /** Filter to be applied to user roles. Default: () => true */
+      filter?: Filter
+    ) => this.acl.proj.read(path, this.user, filter),
+    write: (
+      path: string,
+      /** Filter to be applied to user roles. Default: () => true */
+      filter?: Filter
+    ) => this.acl.proj.read(path, this.user, filter),
+    create: (
+      path: string,
+      /** Filter to be applied to user roles. Default: () => true */
+      filter?: Filter
+    ) => this.acl.proj.read(path, this.user, filter),
+    update: (
+      path: string,
+      /** Filter to be applied to user roles. Default: () => true */
+      filter?: Filter
+    ) => this.acl.proj.read(path, this.user, filter),
+    delete: (
+      path: string,
+      /** Filter to be applied to user roles. Default: () => true */
+      filter?: Filter
+    ) => this.acl.proj.read(path, this.user, filter),
   }))();
 }
