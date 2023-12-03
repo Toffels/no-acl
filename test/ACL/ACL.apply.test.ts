@@ -1,10 +1,10 @@
-import { ZodType } from "zod";
+import { z } from "zod";
 import { AccessControlList } from "../../src/AccessControlList";
 import { GenericUser, SDE, SimpleDescriptorEnum } from "../../src/Types";
 import { getValueByPath } from "../../src/utils/utils";
-import { ExtendZod } from "../../src/zod/AssignAcl";
+import { zInit } from "../../src/zod/AssignAcl";
 
-ExtendZod(ZodType);
+zInit(z);
 
 const user: GenericUser = { roles: [] };
 
@@ -34,7 +34,13 @@ describe("Acl.apply() strict", () => {
   };
 
   it("remove everything", () => {
-    const [applied, removals] = acl.apply(data, user, SDE.read, true);
+    const [applied, removals] = acl.apply(
+      data,
+      user,
+      SDE.read,
+      undefined,
+      true
+    );
 
     expect(removals).toStrictEqual(
       [
@@ -57,7 +63,13 @@ describe("Acl.apply() strict", () => {
 
   it("should skip processing of deeper lying properties, when the parent object will already be removed.", () => {
     // acl.debug = true;
-    const [applied, removals] = acl.apply(data, user, SDE.read, true);
+    const [applied, removals] = acl.apply(
+      data,
+      user,
+      SDE.read,
+      undefined,
+      true
+    );
 
     expect(removals).toContain("dropped_deep");
     // Shouldn't contain it, since, it's cropped out earlier, by parent removal.
@@ -78,6 +90,7 @@ describe("Acl.apply() strict", () => {
       { obj: { a: 1, b: 2, c: 3 } },
       user,
       SDE.read,
+      undefined,
       true
     );
 
@@ -115,6 +128,7 @@ describe("Acl.apply() strict", () => {
         { value: "value" },
         user,
         SDE.read,
+        undefined,
         true
       );
 
@@ -127,6 +141,7 @@ describe("Acl.apply() strict", () => {
         { value: "value" },
         user,
         SDE.write,
+        undefined,
         true
       );
 
@@ -153,7 +168,13 @@ describe("Acl.apply() not strict", () => {
   };
 
   it("remove everything", () => {
-    const [applied, removals] = acl.apply(data, user, SDE.read, true);
+    const [applied, removals] = acl.apply(
+      data,
+      user,
+      SDE.read,
+      undefined,
+      true
+    );
 
     expect(removals).toStrictEqual(
       [
@@ -183,7 +204,13 @@ describe("Acl.apply() additional tests", () => {
       example: { allowed: "value", dropped: { sensitive: "secret" } },
     };
 
-    const [applied, removals] = acl.apply(data, user, SDE.read, true);
+    const [applied, removals] = acl.apply(
+      data,
+      user,
+      SDE.read,
+      undefined,
+      true
+    );
     expect(applied.example?.hasOwnProperty("allowed")).toBe(true);
     expect(applied.example?.dropped).toBeUndefined();
     expect(removals).toContain("example.dropped.sensitive");
@@ -200,7 +227,13 @@ describe("Acl.apply() additional tests", () => {
 
     const data = { sensitive: "data" };
 
-    const [applied, removals] = acl.apply(data, user, SDE.read, true);
+    const [applied, removals] = acl.apply(
+      data,
+      user,
+      SDE.read,
+      undefined,
+      true
+    );
     expect(applied.hasOwnProperty("sensitive"))
       // The reason for this is, that a never will be prioritized
       .toBe(false);
@@ -218,7 +251,13 @@ describe("Acl.apply() additional tests", () => {
 
     const data = { sensitive: "data" };
 
-    const [applied, removals] = acl.apply(data, user, SDE.read, true);
+    const [applied, removals] = acl.apply(
+      data,
+      user,
+      SDE.read,
+      undefined,
+      true
+    );
     expect(applied.hasOwnProperty("sensitive")).toBe(
       user.roles.includes("admin")
     );
@@ -233,13 +272,20 @@ describe("Acl.apply() additional tests", () => {
 
     const data = { config: "configuration data" };
 
-    const [appliedRead, removalsRead] = acl.apply(data, user, SDE.read, true);
+    const [appliedRead, removalsRead] = acl.apply(
+      data,
+      user,
+      SDE.read,
+      undefined,
+      true
+    );
     expect(appliedRead.hasOwnProperty("config")).toBe(true);
 
     const [appliedWrite, removalsWrite] = acl.apply(
       data,
       user,
       SDE.write,
+      undefined,
       true
     );
     expect(appliedWrite.hasOwnProperty("config")).toBe(false);
@@ -254,7 +300,13 @@ describe("Acl.apply() additional tests", () => {
       { strict: false }
     );
 
-    const [applied, removals] = acl.apply(data, user, SDE.read, true);
+    const [applied, removals] = acl.apply(
+      data,
+      user,
+      SDE.read,
+      undefined,
+      true
+    );
     expect(applied.hasOwnProperty("unknownField")).toBe(true);
     expect(removals).not.toContain("unknownField");
   });
@@ -269,7 +321,13 @@ describe("Acl.apply() additional tests", () => {
     });
 
     const data = { config: [{ canWrite: 1, canRead: 1 }] };
-    const [applied, removals] = acl.apply(data, user, SDE.read, true);
+    const [applied, removals] = acl.apply(
+      data,
+      user,
+      SDE.read,
+      undefined,
+      true
+    );
     expect(removals).toContain("config.0.canWrite");
     expect(applied).toStrictEqual({ config: [{ canRead: 1 }] });
   });
@@ -286,7 +344,13 @@ describe("Acl.apply() additional tests", () => {
     });
 
     const data = { config: [{ canWrite: 1, canRead: 1 }] };
-    const [applied, removals] = acl.apply(data, user, SDE.read, true);
+    const [applied, removals] = acl.apply(
+      data,
+      user,
+      SDE.read,
+      undefined,
+      true
+    );
     expect(removals).toContain("config.0.canWrite");
     expect(applied.config?.[0]?.canRead).toBe(1);
     expect(applied.config?.[0]?.canWrite).toBeUndefined();
@@ -313,7 +377,13 @@ describe("Acl.apply() additional tests", () => {
 
     {
       const data = { config: { canWrite: 1, canRead: 1 } };
-      const [applied, removals] = acl.apply(data, user, SDE.read, true);
+      const [applied, removals] = acl.apply(
+        data,
+        user,
+        SDE.read,
+        undefined,
+        true
+      );
       // Requesting read, the write key should be removed.
       expect(removals).toStrictEqual(["config.canWrite"]);
       expect(applied.config?.hasOwnProperty("canRead")).toBe(true);
@@ -322,7 +392,13 @@ describe("Acl.apply() additional tests", () => {
 
     {
       const data = { config: { canWrite: 1, canRead: 1 } };
-      const [applied, removals] = acl.apply(data, user, SDE.write, true);
+      const [applied, removals] = acl.apply(
+        data,
+        user,
+        SDE.write,
+        undefined,
+        true
+      );
       // Requesting read, the write key should be removed.
       expect(removals).toStrictEqual(["config.canRead"]);
       expect(applied.config?.hasOwnProperty("canRead")).toBe(false);
@@ -358,7 +434,13 @@ describe("Acl.apply() additional tests", () => {
         deep: { deeper: { propertyA: 1, propertyB: 1, propertyC: 1 } },
       },
     };
-    const [applied, removals] = acl.apply(data, user, SDE.read, true);
+    const [applied, removals] = acl.apply(
+      data,
+      user,
+      SDE.read,
+      undefined,
+      true
+    );
     expect(removals).toStrictEqual([
       "config.deep.deeper.propertyA",
       "config.deep.deeper.propertyC",
@@ -390,7 +472,13 @@ describe("Acl.apply() additional tests", () => {
         deep: { deeper: { propertyA: 1, propertyB: 1, propertyC: 1 } },
       },
     };
-    const [applied, removals] = acl.apply(data, user, SDE.read, true);
+    const [applied, removals] = acl.apply(
+      data,
+      user,
+      SDE.read,
+      undefined,
+      true
+    );
     expect(removals).toStrictEqual([]);
     expect(applied).toStrictEqual(data);
   });
@@ -422,7 +510,13 @@ describe("Acl.apply() additional tests", () => {
         config2: "config2",
       };
       const copy = { ...data };
-      const [applied, removals] = acl.apply(data, user, SDE.read, true);
+      const [applied, removals] = acl.apply(
+        data,
+        user,
+        SDE.read,
+        undefined,
+        true
+      );
       expect(removals).toStrictEqual(["config2"]);
       expect(applied).not.toStrictEqual(copy);
       expect(applied).toStrictEqual({ config: "config" });
@@ -434,7 +528,13 @@ describe("Acl.apply() additional tests", () => {
         config2: "config2",
       };
       const copy = { ...data };
-      const [applied, removals] = acl.apply(data, user, SDE.write, true);
+      const [applied, removals] = acl.apply(
+        data,
+        user,
+        SDE.write,
+        undefined,
+        true
+      );
       expect(removals).toStrictEqual(["config2"]);
       expect(applied).not.toStrictEqual(copy);
       expect(applied).toStrictEqual({ config: "config" });
@@ -459,6 +559,7 @@ describe("Acl.apply() additional tests", () => {
       data,
       user,
       SDE.read,
+      undefined,
       true
     );
     // This won't be in, since on "config" level it would be cropped already.
@@ -484,10 +585,12 @@ describe("Acl.apply() additional tests", () => {
     });
 
     const data = { config: "config" };
-    expect(acl.apply(data, { roles: [] }, SDE.read, true)[0]).not.toBe(data);
-    expect(acl.apply(data, { roles: [] }, SDE.read, true)[0] === data).toBe(
-      false
-    );
+    expect(
+      acl.apply(data, { roles: [] }, SDE.read, undefined, true)[0]
+    ).not.toBe(data);
+    expect(
+      acl.apply(data, { roles: [] }, SDE.read, undefined, true)[0] === data
+    ).toBe(false);
   });
 
   it("should clean up empty objects", () => {
@@ -502,7 +605,13 @@ describe("Acl.apply() additional tests", () => {
       config: { b: { c: { d: "config" } } },
       config2: { b: { c: { d: {} } } },
     };
-    const [applied, removals] = acl.apply(data, { roles: [] }, SDE.read, true);
+    const [applied, removals] = acl.apply(
+      data,
+      { roles: [] },
+      SDE.read,
+      undefined,
+      true
+    );
     expect(applied).toStrictEqual({});
   });
 
@@ -519,7 +628,13 @@ describe("Acl.apply() additional tests", () => {
       config2: { b: { c: { d: {} } } },
       config3: { b: { c: { d: 1 } } },
     };
-    const [applied, removals] = acl.apply(data, { roles: [] }, SDE.read, true);
+    const [applied, removals] = acl.apply(
+      data,
+      { roles: [] },
+      SDE.read,
+      undefined,
+      true
+    );
     expect(applied).toStrictEqual({
       config3: { b: { c: { d: 1 } } },
     });
@@ -542,6 +657,7 @@ describe("Acl.apply() additional tests", () => {
       },
       { roles: [] },
       SDE.write,
+      undefined,
       true
     );
 
@@ -567,6 +683,7 @@ describe("Acl.apply() additional tests", () => {
         },
         { roles: ["any", "test-1"] },
         SDE.write,
+        undefined,
         true
       );
 
@@ -587,6 +704,7 @@ describe("Acl.apply() additional tests", () => {
         },
         { roles: ["any", "test-1"] },
         SDE.write,
+        undefined,
         true
       );
 
@@ -611,6 +729,7 @@ describe("Acl.apply() additional tests", () => {
       },
       { roles: ["any", "test-1"] },
       SDE.write,
+      undefined,
       true
     );
 
@@ -639,7 +758,13 @@ describe("Acl.apply() additional tests", () => {
     });
 
     // Perform a read operation
-    const [readResult, readRemovals] = acl.apply(data, user, SDE.read, true);
+    const [readResult, readRemovals] = acl.apply(
+      data,
+      user,
+      SDE.read,
+      undefined,
+      true
+    );
     expect(readResult.config).toBeDefined();
     expect(readResult.config.setting1).toBe("value1");
     expect(readResult.config.setting2).toBe("value2");
@@ -657,6 +782,7 @@ describe("Acl.apply() additional tests", () => {
       newData,
       user,
       SDE.write,
+      undefined,
       true
     );
     expect(writeResult.config).toBeDefined();
@@ -686,7 +812,7 @@ describe("Acl.apply() additional tests", () => {
       ],
     });
 
-    const [result] = acl.apply(data, user, SDE.read, true);
+    const [result] = acl.apply(data, user, SDE.read, undefined, true);
     expect(result.section).toBeDefined();
     expect(result.section.publicInfo).toBe("Visible to all");
     expect(result.section.privateInfo).toBeUndefined();
@@ -704,13 +830,14 @@ describe("Acl.apply() additional tests", () => {
       ],
     });
 
-    const [readResult] = acl.apply(data, user, SDE.read, true);
+    const [readResult] = acl.apply(data, user, SDE.read, undefined, true);
     expect(readResult.content).toBe("Editable content"); // Assuming read access is granted
 
     const [writeResult] = acl.apply(
       { content: "New content" },
       user,
       SDE.write,
+      undefined,
       true
     );
     expect(writeResult.content).toBe("New content"); // Assuming write access is granted
@@ -728,7 +855,7 @@ describe("Acl.apply() additional tests", () => {
       ],
     });
 
-    const [, , roles, paths] = acl.apply(data, user, SDE.read, true);
+    const [, , roles, paths] = acl.apply(data, user, SDE.read, undefined, true);
 
     // roles.content will be resolved by roles: [viewer]
     expect(roles.content).toStrictEqual(["viewer"]);

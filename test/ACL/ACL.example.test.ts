@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { A, ExtendZod } from "../../src/zod/AssignAcl";
+import { zInit } from "../../src/zod/AssignAcl";
 
 import { ExampleCourseSchema } from "./example";
 
-ExtendZod(z.ZodType);
+zInit(z);
 
 const debug = false;
 

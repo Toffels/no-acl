@@ -85,3 +85,5 @@ export type Rebuild<T> = T extends (infer R)[]
 export type Variables = {
   [key: `@${string}`]: Descriptor;
 };
+
+export type Filter = (role: string) => boolean;

@@ -1,5 +1,7 @@
 import { z } from "zod";
-import { a, A } from "../../src/zod/AssignAcl";
+import { zInit, a, A } from "../../src/zod/AssignAcl";
+
+zInit(z);
 
 describe("ZAcl", () => {
   const ztest = A(

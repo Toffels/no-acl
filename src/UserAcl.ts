@@ -1,5 +1,5 @@
 import { AccessControlList } from "./AccessControlList";
-import { GenericUser, SDE } from "./Types";
+import { Filter, GenericUser, SDE } from "./Types";
 
 export class UserAcl<
   Data extends {} = any,
@@ -14,32 +14,37 @@ export class UserAcl<
     this.acl = acl;
   }
 
-  public read(data: Data) {
-    return this.acl.read(data, this.user);
+  public read(data: Data, filter?: Filter) {
+    return this.acl.read(data, this.user, filter);
   }
 
-  public write(data: Data) {
-    return this.acl.write(data, this.user);
+  public write(data: Data, filter?: Filter) {
+    return this.acl.write(data, this.user, filter);
   }
 
-  public create(data: Data) {
-    return this.acl.create(data, this.user);
+  public create(data: Data, filter?: Filter) {
+    return this.acl.create(data, this.user, filter);
   }
 
-  public update(data: Data) {
-    return this.acl.update(data, this.user);
+  public update(data: Data, filter?: Filter) {
+    return this.acl.update(data, this.user, filter);
   }
 
-  public delete(data: Data) {
-    return this.acl.delete(data, this.user);
+  public delete(data: Data, filter?: Filter) {
+    return this.acl.delete(data, this.user, filter);
   }
 
   /** Check projection of  */
   public proj = (() => ({
-    read: (patch: string) => this.acl.proj.read(patch, this.user),
-    write: (patch: string) => this.acl.proj.read(patch, this.user),
-    create: (patch: string) => this.acl.proj.read(patch, this.user),
-    update: (patch: string) => this.acl.proj.read(patch, this.user),
-    delete: (patch: string) => this.acl.proj.read(patch, this.user),
+    read: (path: string, filter?: Filter) =>
+      this.acl.proj.read(path, this.user, filter),
+    write: (path: string, filter?: Filter) =>
+      this.acl.proj.read(path, this.user, filter),
+    create: (path: string, filter?: Filter) =>
+      this.acl.proj.read(path, this.user, filter),
+    update: (path: string, filter?: Filter) =>
+      this.acl.proj.read(path, this.user, filter),
+    delete: (path: string, filter?: Filter) =>
+      this.acl.proj.read(path, this.user, filter),
   }))();
 }
