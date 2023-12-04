@@ -683,7 +683,7 @@ export class AccessControlList<
       Object.hasOwn(descriptor, "d") &&
       Object.hasOwn(descriptor, "roles")
     ) {
-      const matchingRoles = this.matchRoles(descriptor, user);
+      const matchingRoles = this.matchRoles(descriptor, user, filter);
       if (matchingRoles.length > 0) return [descriptor.d, matchingRoles];
     }
 
