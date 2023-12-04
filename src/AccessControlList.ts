@@ -515,6 +515,40 @@ export class AccessControlList<
     ) => this.getProjection(path, user, SDE.delete, filter),
   }))();
 
+  /** Check roles of  */
+  public evalPath = (() => ({
+    read: (
+      path: string,
+      user: User,
+      /** Filter to be applied to user roles. Default: () => true */
+      filter?: Filter
+    ) => this.evalDescriptor(this.get(path), user, SDE.read, filter),
+    write: (
+      path: string,
+      user: User,
+      /** Filter to be applied to user roles. Default: () => true */
+      filter?: Filter
+    ) => this.evalDescriptor(this.get(path), user, SDE.write, filter),
+    create: (
+      path: string,
+      user: User,
+      /** Filter to be applied to user roles. Default: () => true */
+      filter?: Filter
+    ) => this.evalDescriptor(this.get(path), user, SDE.create, filter),
+    update: (
+      path: string,
+      user: User,
+      /** Filter to be applied to user roles. Default: () => true */
+      filter?: Filter
+    ) => this.evalDescriptor(this.get(path), user, SDE.update, filter),
+    delete: (
+      path: string,
+      user: User,
+      /** Filter to be applied to user roles. Default: () => true */
+      filter?: Filter
+    ) => this.evalDescriptor(this.get(path), user, SDE.delete, filter),
+  }))();
+
   /** Gets the plain descriptor by path.
    * If explicit descriptor is not defined, it will implicitly try to find the ancient descriptor.
    */
@@ -577,7 +611,7 @@ export class AccessControlList<
     }
   }
 
-  public evalDescriptor(
+  private evalDescriptor(
     descriptor: Descriptor | undefined,
     user: User,
     /** filters the data by either read, write or readWrite access. */
