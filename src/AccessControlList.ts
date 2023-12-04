@@ -484,35 +484,35 @@ export class AccessControlList<
   /** Check projection of  */
   public proj = (() => ({
     read: (
-      patch: string,
+      path: string,
       user: User,
       /** Filter to be applied to user roles. Default: () => true */
       filter?: Filter
-    ) => this.getProjection(patch, user, SDE.read, filter),
+    ) => this.getProjection(path, user, SDE.read, filter),
     write: (
-      patch: string,
+      path: string,
       user: User,
       /** Filter to be applied to user roles. Default: () => true */
       filter?: Filter
-    ) => this.getProjection(patch, user, SDE.write, filter),
+    ) => this.getProjection(path, user, SDE.write, filter),
     create: (
-      patch: string,
+      path: string,
       user: User,
       /** Filter to be applied to user roles. Default: () => true */
       filter?: Filter
-    ) => this.getProjection(patch, user, SDE.create, filter),
+    ) => this.getProjection(path, user, SDE.create, filter),
     update: (
-      patch: string,
+      path: string,
       user: User,
       /** Filter to be applied to user roles. Default: () => true */
       filter?: Filter
-    ) => this.getProjection(patch, user, SDE.update, filter),
+    ) => this.getProjection(path, user, SDE.update, filter),
     delete: (
-      patch: string,
+      path: string,
       user: User,
       /** Filter to be applied to user roles. Default: () => true */
       filter?: Filter
-    ) => this.getProjection(patch, user, SDE.delete, filter),
+    ) => this.getProjection(path, user, SDE.delete, filter),
   }))();
 
   /** Gets the plain descriptor by path.
@@ -577,7 +577,7 @@ export class AccessControlList<
     }
   }
 
-  private evalDescriptor(
+  public evalDescriptor(
     descriptor: Descriptor | undefined,
     user: User,
     /** filters the data by either read, write or readWrite access. */
