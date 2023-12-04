@@ -1,7 +1,12 @@
 import { InvalidInput } from "./errors/InvalidInput";
 import { NotImplemented } from "./errors/NotImplemented";
 import { VariableUndefined } from "./errors/VariableUndefined";
-import { flatten, serializeRegex, setValueByPath } from "./utils/utils";
+import {
+  flatten,
+  getValueByPath,
+  serializeRegex,
+  setValueByPath,
+} from "./utils/utils";
 import {
   Acl,
   AclJson,
@@ -427,7 +432,8 @@ export class AccessControlList<
     if (this.debug) console.log(logs);
 
     for (var removal of removals) {
-      setValueByPath(copy, removal, undefined);
+      if (!getValueByPath(copy, removal) === undefined)
+        setValueByPath(copy, removal, undefined);
     }
 
     const result = (
