@@ -432,7 +432,7 @@ export class AccessControlList<
     if (this.debug) console.log(logs);
 
     for (var removal of removals) {
-      if (!getValueByPath(copy, removal) === undefined)
+      if (getValueByPath(copy, removal) !== undefined)
         setValueByPath(copy, removal, undefined);
     }
 
