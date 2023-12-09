@@ -3,7 +3,12 @@ import { isObj } from "./utils";
 // Checks if the given object is empty.
 // An object is considered empty if it has no enumerable own properties.
 export function isEmptyObject(obj: object): boolean {
-  return isObj(obj) && Object.keys(obj).length === 0 && !Array.isArray(obj);
+  return (
+    isObj(obj) &&
+    Object.keys(obj).length === 0 &&
+    !Array.isArray(obj) &&
+    !(obj instanceof Date)
+  );
 }
 
 // Recursively removes empty objects from a nested object structure.
@@ -13,8 +18,9 @@ export function removeEmptyObjects<O extends Record<string, any>>(obj: O): O {
   if (!isObj(obj)) {
     return obj;
   }
-
-  if (Array.isArray(obj)) {
+  if (obj instanceof Date) {
+    return obj;
+  } else if (Array.isArray(obj)) {
     const result: any[] = [];
     if (obj.length === 0) return result as unknown as O;
 
